@@ -1,201 +1,240 @@
-import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import api from '../services/api'
-import { loadRazorpayScript, handleRazorpayPayment } from '../services/razorpay'
+import { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import api from "../services/api";
+import TreeView from "../components/TreeView";
+import { loadRazorpayScript, handleRazorpayPayment } from "../services/razorpay";
 
-function CourseDetail() {
-  const { id } = useParams()
-  const [course, setCourse] = useState(null)
-  const [videos, setVideos] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [processing, setProcessing] = useState(false)
+// Format description
+function formatDescription(text) {
+  if (!text) return "";
+  return text
+    .replace(/^- (.*)$/gm, "<li>$1</li>")
+    .replace(/^\d+\. (.*)$/gm, "<li>$1</li>")
+    .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
+    .replace(/\n/g, "<br>");
+}
+
+export default function CourseDetail() {
+  const { id } = useParams();
+
+  const [course, setCourse] = useState(null);
+  const [modules, setModules] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [openModuleId, setOpenModuleId] = useState(null);
+
+  // Tree View states
+  const [tree, setTree] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileContent, setFileContent] = useState(null);
+
+  const toggleModule = (id) => {
+    setOpenModuleId(openModuleId === id ? null : id);
+    setTree(null); // reset tree when opening new module
+    setSelectedFile(null);
+    setFileContent(null);
+  };
 
   useEffect(() => {
-    fetchCourse()
-  }, [id])
+    fetchCourse();
+  }, [id]);
 
   useEffect(() => {
-    if (course?.is_enrolled) {
-      fetchVideos()
-    } else {
-      setVideos([])
-    }
-  }, [course?.is_enrolled, course?.id])
+    if (course?.is_enrolled) fetchModules();
+  }, [course?.is_enrolled]);
 
   const fetchCourse = async () => {
     try {
-      const response = await api.get(`/courses/${id}/`)
-      setCourse(response.data)
-    } catch (err) {
-      setError('Failed to load course')
+      const res = await api.get(`/courses/${id}/`);
+      setCourse(res.data);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const fetchVideos = async () => {
-    if (!course?.is_enrolled) {
-      setVideos([])
-      return
-    }
-    
-    try {
-      const response = await api.get(`/courses/${id}/videos/`)
-      setVideos(response.data)
-    } catch (err) {
-      // User might not be enrolled, videos will be empty
-      setVideos([])
-    }
-  }
+  const fetchModules = async () => {
+    const res = await api.get(`/courses/${id}/modules/`);
+    setModules(res.data);
+  };
 
+  // Load ZIP/SINGLE FILE tree
+  const loadAttachmentTree = async (videoId) => {
+    const res = await api.get(`/videos/${videoId}/attachment-tree/`);
+    setTree(res.data.tree);
+    setSelectedFile(null);
+    setFileContent(null);
+  };
+
+  // Load file content
+  const loadFileContent = async (videoId, filePath) => {
+    const res = await api.get(
+      `/videos/${videoId}/attachment-content/${filePath}/`
+    );
+    setSelectedFile(filePath);
+    setFileContent(res.data.content);
+  };
+
+  // Payment
   const handleEnroll = async () => {
-    setProcessing(true)
-    setError('')
-
     try {
-      // Load Razorpay script
-      await loadRazorpayScript()
+      await loadRazorpayScript();
+      const order = await api.post("/payment/create-order/", { course_id: id });
 
-      // Create order
-      const orderResponse = await api.post('/payment/create-order/', {
-        course_id: id
-      })
-
-      const { order_id, amount, currency, key_id } = orderResponse.data
-
-      // Handle Razorpay payment
-      const paymentData = await handleRazorpayPayment({
-        order_id,
-        amount,
-        currency,
-        key_id,
+      const pay = await handleRazorpayPayment({
+        ...order.data,
         name: course.title,
         description: course.description,
-      })
+      });
 
-      // Verify payment
-      const verifyResponse = await api.post('/payment/verify/', {
-        razorpay_order_id: paymentData.razorpay_order_id,
-        razorpay_payment_id: paymentData.razorpay_payment_id,
-        razorpay_signature: paymentData.razorpay_signature,
+      await api.post("/payment/verify/", {
+        ...pay,
         course_id: id,
-      })
+      });
 
-      // Refresh course data - fetchVideos will be called automatically via useEffect
-      await fetchCourse()
-      
-      alert('Payment successful! You are now enrolled in this course.')
-    } catch (err) {
-      if (err.message && err.message.includes('Payment')) {
-        setError('Payment was cancelled or failed')
-      } else {
-        setError(err.response?.data?.error || 'Enrollment failed')
-      }
-    } finally {
-      setProcessing(false)
+      alert("Enrollment successful");
+      fetchCourse();
+    } catch (e) {
+      alert("Payment failed");
     }
-  }
+  };
 
-  if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-lg">Loading course...</div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!course) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">Course not found.</p>
-          <Link to="/dashboard" className="text-indigo-600 hover:text-indigo-500 mt-4 inline-block">
-            Back to Dashboard
-          </Link>
-        </div>
-      </div>
-    )
-  }
+  if (loading) return <div className="p-10 text-center">Loading…</div>;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">{course.title}</h1>
-        <p className="text-gray-600 mb-4">{course.description}</p>
-        <div className="flex items-center justify-between">
-          <span className="text-3xl font-bold text-indigo-600">₹{course.price}</span>
-          {course.is_enrolled ? (
-            <span className="px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-              ✓ Enrolled
-            </span>
-          ) : (
-            <button
-              onClick={handleEnroll}
-              disabled={processing}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-md transition-colors disabled:opacity-50"
-            >
-              {processing ? 'Processing...' : 'Enroll Now'}
-            </button>
-          )}
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50 px-6 py-10 font-[Inter]">
+      <div className="max-w-7xl mx-auto space-y-8">
 
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
-      )}
+        {/* Header */}
+        <div className="bg-white shadow-sm border rounded-2xl p-8">
+          <h1 className="text-4xl font-extrabold">{course.title}</h1>
 
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Course Videos</h2>
-        
-        {course.is_enrolled ? (
-          videos.length > 0 ? (
-            <div className="space-y-4">
-              {videos.map((video) => (
-                <div
-                  key={video.id}
-                  className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+          <div
+            className="text-gray-700 leading-relaxed text-lg"
+            dangerouslySetInnerHTML={{ __html: formatDescription(course.description) }}
+          />
+
+          <div className="flex justify-between items-center mt-6">
+            <div className="text-3xl font-bold text-indigo-600">₹{course.price}</div>
+
+            <div className="flex items-center gap-4">
+
+              {course.is_enrolled && (
+                <Link
+                  to={`/course/${id}/test-history`}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-medium text-gray-900">{video.title}</h3>
-                      {video.description && (
-                        <p className="text-gray-600 text-sm mt-1">{video.description}</p>
+                  📘 View Test History
+                </Link>
+              )}
+
+              {!course.is_active ? (
+                <button className="bg-gray-400 text-white px-6 py-2 rounded-md">
+                  Locked
+                </button>
+              ) : course.is_enrolled ? (
+                <span className="px-4 py-2 bg-green-100 text-green-700 rounded-full">
+                  ✓ Enrolled
+                </span>
+              ) : (
+                <button
+                  onClick={handleEnroll}
+                  className="px-6 py-2 bg-indigo-600 text-white rounded-md"
+                >
+                  Enroll Now
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="bg-white shadow-sm border rounded-2xl p-8">
+          <h2 className="text-2xl font-bold mb-5">Course Content</h2>
+
+          {modules.map((item) => (
+            <div
+              key={item.id}
+              className="border rounded-xl p-4 shadow-sm mb-4"
+            >
+              <div
+                className="flex justify-between cursor-pointer"
+                onClick={() => toggleModule(item.id)}
+              >
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  {item.item_type === "video" ? "🎬" : "📝"} {item.title}
+                </h3>
+
+                <span className="text-xl">
+                  {openModuleId === item.id ? "▲" : "▼"}
+                </span>
+              </div>
+
+              {/* Dropdown */}
+              {openModuleId === item.id && (
+                <div className="mt-3 pl-4 border-l-2 border-indigo-300">
+
+                  {/* Description */}
+                  {item.description && (
+                    <div
+                      className="text-gray-600 text-sm"
+                      dangerouslySetInnerHTML={{
+                        __html: formatDescription(item.description),
+                      }}
+                    />
+                  )}
+
+                  {/* VIDEO ENTRY */}
+                  {item.item_type === "video" ? (
+                    <div className="mt-4 space-y-4">
+
+                      <Link to={`/video/${item.item_id}`}>
+                        <img
+                          src={item.thumbnail || "/default-thumb.png"}
+                          className="w-40 h-24 rounded shadow border"
+                        />
+                      </Link>
+
+                      {item.attachment_url && (
+                        <button
+                          onClick={() => loadAttachmentTree(item.item_id)}
+                          className="bg-gray-200 px-3 py-1 rounded"
+                        >
+                          📂 View Code Files
+                        </button>
+                      )}
+
+                      {tree && (
+                        <TreeView
+                          tree={tree}
+                          onSelect={(filePath) =>
+                            loadFileContent(item.item_id, filePath)
+                          }
+                        />
+                      )}
+
+                      {fileContent && (
+                        <div className="mt-4 bg-black text-green-400 p-4 rounded overflow-x-auto text-sm">
+                          <h4 className="text-white mb-2">
+                            {selectedFile}
+                          </h4>
+                          <pre>{fileContent}</pre>
+                        </div>
                       )}
                     </div>
+                  ) : (
                     <Link
-                      to={`/video/${video.id}`}
-                      className="ml-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                      to={`/test/${item.item_id}`}
+                      className="bg-green-600 text-white px-4 py-2 rounded-md inline-block mt-4"
                     >
-                      Watch
+                      Start Test →
                     </Link>
-                  </div>
+                  )}
                 </div>
-              ))}
+              )}
             </div>
-          ) : (
-            <p className="text-gray-500">No videos available for this course yet.</p>
-          )
-        ) : (
-          <div className="text-center py-8">
-            <p className="text-gray-500 mb-4">Please enroll in this course to access videos.</p>
-            <button
-              onClick={handleEnroll}
-              disabled={processing}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-md transition-colors disabled:opacity-50"
-            >
-              {processing ? 'Processing...' : 'Enroll Now'}
-            </button>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
     </div>
-  )
+  );
 }
-
-export default CourseDetail
-

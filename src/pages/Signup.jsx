@@ -1,149 +1,183 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { FiMail, FiUser, FiLock } from "react-icons/fi";
 
 function Signup() {
   const [formData, setFormData] = useState({
-    email: '',
-    username: '',
-    password: '',
-    password2: ''
-  })
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const { signup } = useAuth()
-  const navigate = useNavigate()
+    email: "",
+    username: "",
+    password: "",
+    password2: "",
+  });
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
-  }
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { signup } = useAuth();
+  const navigate = useNavigate();
+
+  const handleChange = (e) =>
+    setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
     if (formData.password !== formData.password2) {
-      setError('Passwords do not match')
-      setLoading(false)
-      return
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
     }
 
     try {
-      await signup(formData.email, formData.username, formData.password, formData.password2)
-alert('Signup successful! Please login to continue.')
-navigate('/auth/login')
-
+      await signup(
+        formData.email,
+        formData.username,
+        formData.password,
+        formData.password2
+      );
+      alert("Signup successful! Please login to continue.");
+      navigate("/auth/login");
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.password?.[0] || 'Signup failed')
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.password?.[0] ||
+          "Signup failed"
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link to="/auth/login" className="font-medium text-indigo-600 hover:text-indigo-500">
-              sign in to your account
-            </Link>
-          </p>
+  <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-100 px-6 py-10">
+
+    {/* 🔥 PAGE HEADING */}
+    <h1 className="text-3xl md:text-4xl font-extrabold text-center text-indigo-700 mb-6">
+      Bekola Internship Portal – Signup
+    </h1>
+
+    <div className="max-w-5xl w-full bg-white shadow-xl rounded-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2">
+
+      {/* LEFT SIDE BANNER */}
+      <div className="hidden md:flex flex-col justify-center bg-indigo-600 text-white p-10">
+        <h2 className="text-4xl font-bold mb-4">Join Bekola Technical Solutions</h2>
+        <p className="text-lg text-indigo-100 leading-relaxed">
+          Start your journey with high-quality training, internships and
+          hands-on engineering experience.
+        </p>
+
+        <div className="mt-8 space-y-3 text-indigo-100">
+          <p>✔ Industry-level Internships</p>
+          <p>✔ Microservices, AI, MERN Stack</p>
+          <p>✔ Real Live Projects</p>
+          <p>✔ Placement Assistance</p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                Email address
-              </label>
+      </div>
+
+      {/* RIGHT SIDE FORM */}
+      <div className="p-10">
+        <h2 className="text-3xl font-bold text-gray-900 text-center mb-2">
+          Create your Account
+        </h2>
+
+        <p className="text-center text-gray-600 mb-8">
+          Already have an account?{" "}
+          <Link to="/auth/login" className="text-indigo-600 font-semibold hover:underline">
+            Login
+          </Link>
+        </p>
+
+        {error && (
+          <div className="bg-red-100 text-red-700 border border-red-300 px-4 py-3 rounded mb-4 text-sm">
+            {error}
+          </div>
+        )}
+
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          {/* Email */}
+          <div>
+            <label className="text-sm font-medium">Email</label>
+            <div className="flex items-center border rounded-lg mt-1 px-3">
+              <FiMail className="text-gray-500" />
               <input
-                id="email"
-                name="email"
                 type="email"
-                autoComplete="email"
+                name="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
                 value={formData.email}
                 onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="username" className="sr-only">
-                Username
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Username"
-                value={formData.username}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="password2" className="sr-only">
-                Confirm Password
-              </label>
-              <input
-                id="password2"
-                name="password2"
-                type="password"
-                autoComplete="new-password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Confirm Password"
-                value={formData.password2}
-                onChange={handleChange}
+                placeholder="Enter email"
+                className="w-full p-2 bg-transparent outline-none"
               />
             </div>
           </div>
 
+          {/* Username */}
           <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-            >
-              {loading ? 'Signing up...' : 'Sign up'}
-            </button>
+            <label className="text-sm font-medium">Username</label>
+            <div className="flex items-center border rounded-lg mt-1 px-3">
+              <FiUser className="text-gray-500" />
+              <input
+                type="text"
+                name="username"
+                required
+                value={formData.username}
+                onChange={handleChange}
+                placeholder="Enter username"
+                className="w-full p-2 bg-transparent outline-none"
+              />
+            </div>
           </div>
+
+          {/* Password */}
+          <div>
+            <label className="text-sm font-medium">Password</label>
+            <div className="flex items-center border rounded-lg mt-1 px-3">
+              <FiLock className="text-gray-500" />
+              <input
+                type="password"
+                name="password"
+                required
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter password"
+                className="w-full p-2 bg-transparent outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label className="text-sm font-medium">Confirm Password</label>
+            <div className="flex items-center border rounded-lg mt-1 px-3">
+              <FiLock className="text-gray-500" />
+              <input
+                type="password"
+                name="password2"
+                required
+                value={formData.password2}
+                onChange={handleChange}
+                placeholder="Re-enter password"
+                className="w-full p-2 bg-transparent outline-none"
+              />
+            </div>
+          </div>
+
+          {/* Button */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-lg font-semibold shadow-lg transition disabled:opacity-50"
+          >
+            {loading ? "Creating account..." : "Sign Up"}
+          </button>
         </form>
       </div>
     </div>
-  )
+  </div>
+);
+
 }
 
-export default Signup
-
+export default Signup;
