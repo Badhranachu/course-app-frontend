@@ -23,20 +23,29 @@ export default function CourseDetail() {
 
   const [openModuleId, setOpenModuleId] = useState(null);
 
-  // Tree View states
+  // Tree View
   const [tree, setTree] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState(null);
 
+  // NEW STATES
+  const [openGithub, setOpenGithub] = useState(false);
+  const [openCertificate, setOpenCertificate] = useState(false);
+  const [githubLink, setGithubLink] = useState("");
+  const [savedGithubLink, setSavedGithubLink] = useState(null);
+  const [sendingCertificate, setSendingCertificate] = useState(false);
+
   const toggleModule = (id) => {
     setOpenModuleId(openModuleId === id ? null : id);
-    setTree(null); // reset tree when opening new module
+    setTree(null);
     setSelectedFile(null);
     setFileContent(null);
   };
 
+  // Load initial data
   useEffect(() => {
     fetchCourse();
+    fetchGithubStatus();
   }, [id]);
 
   useEffect(() => {
@@ -57,7 +66,64 @@ export default function CourseDetail() {
     setModules(res.data);
   };
 
-  // Load ZIP/SINGLE FILE tree
+  // 👉 Check if Github link already saved for this user + course
+  const fetchGithubStatus = async () => {
+    try {
+      const res = await api.get(`/certificate/github-link/${id}/`);
+      setSavedGithubLink(res.data.github_link);
+    } catch (err) {
+      console.log("No Github link found for this course.");
+    }
+  };
+
+  // 👉 Save Github link (only once per user+course)
+  const submitGithubLink = async () => {
+    if (!githubLink.trim()) {
+      alert("Please enter a valid Github repository link.");
+      return;
+    }
+
+    try {
+      await api.post("/certificate/github-link/", {
+        course_id: id,
+        github_link: githubLink.trim(),
+      });
+
+      alert("Github link submitted!");
+      setSavedGithubLink(githubLink.trim()); // update UI
+      setGithubLink("");
+    } catch (err) {
+      alert(
+        err?.response?.data?.error ||
+          "Failed to submit link. Please try again."
+      );
+    }
+  };
+
+  // 👉 Send certificate to user's email
+  const sendCertificate = async () => {
+    if (!savedGithubLink) {
+      alert(
+        "Please submit your Github repository link in the 'Github Files' section before requesting the certificate."
+      );
+      return;
+    }
+
+    try {
+      setSendingCertificate(true);
+      const res = await api.post(`/certificate/send/${id}/`);
+      alert(res.data.message || "Certificate sent to your registered email.");
+    } catch (err) {
+      alert(
+        err?.response?.data?.error ||
+          "Failed to send certificate. Please try again later."
+      );
+    } finally {
+      setSendingCertificate(false);
+    }
+  };
+
+  // Video File Tree
   const loadAttachmentTree = async (videoId) => {
     const res = await api.get(`/videos/${videoId}/attachment-tree/`);
     setTree(res.data.tree);
@@ -65,7 +131,6 @@ export default function CourseDetail() {
     setFileContent(null);
   };
 
-  // Load file content
   const loadFileContent = async (videoId, filePath) => {
     const res = await api.get(
       `/videos/${videoId}/attachment-content/${filePath}/`
@@ -93,7 +158,7 @@ export default function CourseDetail() {
 
       alert("Enrollment successful");
       fetchCourse();
-    } catch (e) {
+    } catch {
       alert("Payment failed");
     }
   };
@@ -110,14 +175,17 @@ export default function CourseDetail() {
 
           <div
             className="text-gray-700 leading-relaxed text-lg"
-            dangerouslySetInnerHTML={{ __html: formatDescription(course.description) }}
+            dangerouslySetInnerHTML={{
+              __html: formatDescription(course.description),
+            }}
           />
 
           <div className="flex justify-between items-center mt-6">
-            <div className="text-3xl font-bold text-indigo-600">₹{course.price}</div>
+            <div className="text-3xl font-bold text-indigo-600">
+              ₹{course.price}
+            </div>
 
             <div className="flex items-center gap-4">
-
               {course.is_enrolled && (
                 <Link
                   to={`/course/${id}/test-history`}
@@ -151,11 +219,9 @@ export default function CourseDetail() {
         <div className="bg-white shadow-sm border rounded-2xl p-8">
           <h2 className="text-2xl font-bold mb-5">Course Content</h2>
 
+          {/* Dynamic modules */}
           {modules.map((item) => (
-            <div
-              key={item.id}
-              className="border rounded-xl p-4 shadow-sm mb-4"
-            >
+            <div key={item.id} className="border rounded-xl p-4 shadow-sm mb-4">
               <div
                 className="flex justify-between cursor-pointer"
                 onClick={() => toggleModule(item.id)}
@@ -163,17 +229,13 @@ export default function CourseDetail() {
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   {item.item_type === "video" ? "🎬" : "📝"} {item.title}
                 </h3>
-
                 <span className="text-xl">
                   {openModuleId === item.id ? "▲" : "▼"}
                 </span>
               </div>
 
-              {/* Dropdown */}
               {openModuleId === item.id && (
                 <div className="mt-3 pl-4 border-l-2 border-indigo-300">
-
-                  {/* Description */}
                   {item.description && (
                     <div
                       className="text-gray-600 text-sm"
@@ -183,10 +245,8 @@ export default function CourseDetail() {
                     />
                   )}
 
-                  {/* VIDEO ENTRY */}
                   {item.item_type === "video" ? (
                     <div className="mt-4 space-y-4">
-
                       <Link to={`/video/${item.item_id}`}>
                         <img
                           src={item.thumbnail || "/default-thumb.png"}
@@ -214,9 +274,7 @@ export default function CourseDetail() {
 
                       {fileContent && (
                         <div className="mt-4 bg-black text-green-400 p-4 rounded overflow-x-auto text-sm">
-                          <h4 className="text-white mb-2">
-                            {selectedFile}
-                          </h4>
+                          <h4 className="text-white mb-2">{selectedFile}</h4>
                           <pre>{fileContent}</pre>
                         </div>
                       )}
@@ -233,6 +291,101 @@ export default function CourseDetail() {
               )}
             </div>
           ))}
+
+          {/* FIXED BLOCK — GITHUB */}
+          <div className="border rounded-xl p-4 shadow-sm mb-4">
+            <div
+              className="flex justify-between cursor-pointer"
+              onClick={() => setOpenGithub(!openGithub)}
+            >
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                📦 Github Files
+              </h3>
+              <span className="text-xl">{openGithub ? "▲" : "▼"}</span>
+            </div>
+
+            {openGithub && (
+              <div className="mt-3 pl-4 border-l-2 border-indigo-300 text-sm text-gray-700">
+                {savedGithubLink ? (
+                  <div className="p-3 bg-green-100 text-green-800 rounded">
+                    <p className="font-semibold">Github Link Uploaded</p>
+                    <a
+                      href={savedGithubLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline break-all"
+                    >
+                      {savedGithubLink}
+                    </a>
+                  </div>
+                ) : (
+                  <>
+                    <p className="mb-3">Paste your Github repository link:</p>
+
+                    <input
+                      type="text"
+                      value={githubLink}
+                      onChange={(e) => setGithubLink(e.target.value)}
+                      placeholder="https://github.com/username/repo"
+                      className="w-full border p-2 rounded mb-3"
+                    />
+
+                    <button
+                      onClick={submitGithubLink}
+                      className="bg-indigo-600 text-white px-4 py-2 rounded shadow"
+                    >
+                      Submit Github Link
+                    </button>
+                  </>
+                )}
+
+                <hr className="my-4" />
+
+                <button className="mt-3 bg-gray-200 px-3 py-1 rounded">
+                  📂 View Github Files
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* FIXED BLOCK — CERTIFICATE */}
+          <div className="border rounded-xl p-4 shadow-sm mb-4">
+            <div
+              className="flex justify-between cursor-pointer"
+              onClick={() => setOpenCertificate(!openCertificate)}
+            >
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                🧾 Certificate
+              </h3>
+              <span className="text-xl">
+                {openCertificate ? "▲" : "▼"}
+              </span>
+            </div>
+
+            {openCertificate && (
+              <div className="mt-3 pl-4 border-l-2 border-indigo-300 text-sm text-gray-700">
+                <p>
+                  Your certificate will be generated and sent to your registered
+                  email after you submit your Github project link.
+                </p>
+
+                <button
+                  onClick={sendCertificate}
+                  disabled={sendingCertificate}
+                  className={`mt-3 px-4 py-2 rounded text-white ${
+                    sendingCertificate
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-green-600"
+                  }`}
+                >
+                  {sendingCertificate
+                    ? "Sending..."
+                    : "⬇️ Send Certificate to Email"}
+                </button>
+              </div>
+            )}
+          </div>
+
         </div>
       </div>
     </div>
