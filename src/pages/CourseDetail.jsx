@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import TreeView from "../components/TreeView";
-import { loadRazorpayScript, handleRazorpayPayment } from "../services/razorpay";
 
+// ------------------------------
 // Format description
+// ------------------------------
 function formatDescription(text) {
   if (!text) return "";
   return text
@@ -16,33 +17,60 @@ function formatDescription(text) {
 
 export default function CourseDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
+  const [attemptedTests, setAttemptedTests] = useState({});
   const [loading, setLoading] = useState(true);
 
   const [openModuleId, setOpenModuleId] = useState(null);
 
-  // Tree View
   const [tree, setTree] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState(null);
 
-  // NEW STATES
   const [openGithub, setOpenGithub] = useState(false);
-  const [openCertificate, setOpenCertificate] = useState(false);
   const [githubLink, setGithubLink] = useState("");
   const [savedGithubLink, setSavedGithubLink] = useState(null);
-  const [sendingCertificate, setSendingCertificate] = useState(false);
+  const [moduleProgress, setModuleProgress] = useState([]);
 
-  const toggleModule = (id) => {
-    setOpenModuleId(openModuleId === id ? null : id);
+useEffect(() => {
+  if (course?.is_enrolled) {
+    fetchModuleProgress();
+  }
+}, [course?.is_enrolled]);
+
+
+const fetchModuleProgress = async () => {
+  try {
+    const res = await api.get(
+      `/courses/${id}/module-progress/`
+    );
+    setModuleProgress(res.data.modules || []);
+  } catch (err) {
+    console.error("Module progress error", err);
+    setModuleProgress([]);
+  }
+};
+
+
+
+
+
+
+  // ------------------------------
+  // MODULE TOGGLE
+  // ------------------------------
+  const toggleModule = (moduleId, unlocked) => {
+    if (!unlocked) return;
+    setOpenModuleId(openModuleId === moduleId ? null : moduleId);
     setTree(null);
-    setSelectedFile(null);
     setFileContent(null);
   };
 
-  // Load initial data
+  // ------------------------------
+  // INITIAL LOAD
+  // ------------------------------
   useEffect(() => {
     fetchCourse();
     fetchGithubStatus();
@@ -66,327 +94,301 @@ export default function CourseDetail() {
     setModules(res.data);
   };
 
-  // 👉 Check if Github link already saved for this user + course
+  // ------------------------------
+  // TEST ATTEMPTS
+  // ------------------------------
+  useEffect(() => {
+    if (!modules.length) return;
+
+    const map = {};
+    Promise.all(
+      modules.map(async (item) => {
+        if (item.item_type === "test") {
+          try {
+            const res = await api.get(
+              `/courses/${id}/tests/${item.item_id}/`
+            );
+            map[item.item_id] = res.data.attempted;
+          } catch {
+            map[item.item_id] = false;
+          }
+        }
+      })
+    ).then(() => setAttemptedTests(map));
+  }, [modules, id]);
+
+  // ------------------------------
+  // GITHUB STATUS
+  // ------------------------------
   const fetchGithubStatus = async () => {
     try {
       const res = await api.get(`/certificate/github-link/${id}/`);
-      setSavedGithubLink(res.data.github_link);
-    } catch (err) {
-      console.log("No Github link found for this course.");
+      setSavedGithubLink(res.data.github_link || null);
+    } catch {
+      setSavedGithubLink(null);
     }
   };
 
-  // 👉 Save Github link (only once per user+course)
   const submitGithubLink = async () => {
+    if (savedGithubLink) return;
+
     if (!githubLink.trim()) {
-      alert("Please enter a valid Github repository link.");
+      alert("Github link is required");
       return;
     }
 
     try {
-      await api.post("/certificate/github-link/", {
-        course_id: id,
+      await api.post(`/certificate/github-link/${id}/`, {
         github_link: githubLink.trim(),
       });
-
-      alert("Github link submitted!");
-      setSavedGithubLink(githubLink.trim()); // update UI
+      setSavedGithubLink(githubLink.trim());
       setGithubLink("");
-    } catch (err) {
-      alert(
-        err?.response?.data?.error ||
-          "Failed to submit link. Please try again."
-      );
+    } catch {
+      alert("Failed to submit Github link");
     }
   };
 
-  // 👉 Send certificate to user's email
-  const sendCertificate = async () => {
-    if (!savedGithubLink) {
-      alert(
-        "Please submit your Github repository link in the 'Github Files' section before requesting the certificate."
-      );
-      return;
-    }
-
-    try {
-      setSendingCertificate(true);
-      const res = await api.post(`/certificate/send/${id}/`);
-      alert(res.data.message || "Certificate sent to your registered email.");
-    } catch (err) {
-      alert(
-        err?.response?.data?.error ||
-          "Failed to send certificate. Please try again later."
-      );
-    } finally {
-      setSendingCertificate(false);
-    }
-  };
-
-  // Video File Tree
+  // ------------------------------
+  // ATTACHMENTS
+  // ------------------------------
   const loadAttachmentTree = async (videoId) => {
-    const res = await api.get(`/videos/${videoId}/attachment-tree/`);
+    const res = await api.get(
+      `/courses/${id}/videos/${videoId}/attachment-tree/`
+    );
     setTree(res.data.tree);
-    setSelectedFile(null);
     setFileContent(null);
   };
 
   const loadFileContent = async (videoId, filePath) => {
     const res = await api.get(
-      `/videos/${videoId}/attachment-content/${filePath}/`
+      `/courses/${id}/videos/${videoId}/attachment-content/${filePath}/`
     );
-    setSelectedFile(filePath);
     setFileContent(res.data.content);
   };
 
-  // Payment
-  const handleEnroll = async () => {
-    try {
-      await loadRazorpayScript();
-      const order = await api.post("/payment/create-order/", { course_id: id });
-
-      const pay = await handleRazorpayPayment({
-        ...order.data,
-        name: course.title,
-        description: course.description,
-      });
-
-      await api.post("/payment/verify/", {
-        ...pay,
-        course_id: id,
-      });
-
-      alert("Enrollment successful");
-      fetchCourse();
-    } catch {
-      alert("Payment failed");
-    }
+  // ------------------------------
+  // START TEST
+  // ------------------------------
+  const handleStartTest = (testId) => {
+    if (attemptedTests[testId]) return;
+    navigate(`/courses/${id}/tests/${testId}`);
   };
 
   if (loading) return <div className="p-10 text-center">Loading…</div>;
 
+  // ------------------------------
+  // RULES
+  // ------------------------------
+  const lastModule = [...moduleProgress]
+  .sort((a, b) => a.order - b.order)
+  .slice(-1)[0];
+
+const githubUnlocked =
+  Boolean(lastModule) && lastModule.is_completed === true;
+
+
+  const courseCompleted = Boolean(savedGithubLink);
+
+  // ------------------------------
+  // UI
+  // ------------------------------
   return (
-    <div className="min-h-screen bg-gray-50 px-6 py-10 font-[Inter]">
+    <div className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="max-w-7xl mx-auto space-y-8">
 
-        {/* Header */}
-        <div className="bg-white shadow-sm border rounded-2xl p-8">
-          <h1 className="text-4xl font-extrabold">{course.title}</h1>
+        {/* HEADER */}
+        <div className="bg-white border rounded-2xl p-8">
+          <h1 className="text-4xl font-bold">{course.title}</h1>
 
           <div
-            className="text-gray-700 leading-relaxed text-lg"
             dangerouslySetInnerHTML={{
               __html: formatDescription(course.description),
             }}
           />
 
+          {/* STATUS BAR */}
           <div className="flex justify-between items-center mt-6">
-            <div className="text-3xl font-bold text-indigo-600">
+            <div className="text-2xl font-bold text-indigo-600">
               ₹{course.price}
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex gap-3 items-center">
               {course.is_enrolled && (
                 <Link
-                  to={`/course/${id}/test-history`}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md"
+                  to={`/courses/${id}/tests/history`}
+                  className="text-sm underline text-blue-600"
                 >
-                  📘 View Test History
+                  View Test History →
                 </Link>
               )}
 
-              {!course.is_active ? (
-                <button className="bg-gray-400 text-white px-6 py-2 rounded-md">
-                  Locked
-                </button>
-              ) : course.is_enrolled ? (
+              {course.is_enrolled ? (
                 <span className="px-4 py-2 bg-green-100 text-green-700 rounded-full">
                   ✓ Enrolled
                 </span>
               ) : (
-                <button
-                  onClick={handleEnroll}
-                  className="px-6 py-2 bg-indigo-600 text-white rounded-md"
-                >
-                  Enroll Now
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="bg-white shadow-sm border rounded-2xl p-8">
-          <h2 className="text-2xl font-bold mb-5">Course Content</h2>
-
-          {/* Dynamic modules */}
-          {modules.map((item) => (
-            <div key={item.id} className="border rounded-xl p-4 shadow-sm mb-4">
-              <div
-                className="flex justify-between cursor-pointer"
-                onClick={() => toggleModule(item.id)}
-              >
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  {item.item_type === "video" ? "🎬" : "📝"} {item.title}
-                </h3>
-                <span className="text-xl">
-                  {openModuleId === item.id ? "▲" : "▼"}
+                <span className="px-4 py-2 bg-gray-300 rounded">
+                  Not Enrolled
                 </span>
-              </div>
-
-              {openModuleId === item.id && (
-                <div className="mt-3 pl-4 border-l-2 border-indigo-300">
-                  {item.description && (
-                    <div
-                      className="text-gray-600 text-sm"
-                      dangerouslySetInnerHTML={{
-                        __html: formatDescription(item.description),
-                      }}
-                    />
-                  )}
-
-                  {item.item_type === "video" ? (
-                    <div className="mt-4 space-y-4">
-                      <Link to={`/video/${item.item_id}`}>
-                        <img
-                          src={item.thumbnail || "/default-thumb.png"}
-                          className="w-40 h-24 rounded shadow border"
-                        />
-                      </Link>
-
-                      {item.attachment_url && (
-                        <button
-                          onClick={() => loadAttachmentTree(item.item_id)}
-                          className="bg-gray-200 px-3 py-1 rounded"
-                        >
-                          📂 View Code Files
-                        </button>
-                      )}
-
-                      {tree && (
-                        <TreeView
-                          tree={tree}
-                          onSelect={(filePath) =>
-                            loadFileContent(item.item_id, filePath)
-                          }
-                        />
-                      )}
-
-                      {fileContent && (
-                        <div className="mt-4 bg-black text-green-400 p-4 rounded overflow-x-auto text-sm">
-                          <h4 className="text-white mb-2">{selectedFile}</h4>
-                          <pre>{fileContent}</pre>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <Link
-                      to={`/test/${item.item_id}`}
-                      className="bg-green-600 text-white px-4 py-2 rounded-md inline-block mt-4"
-                    >
-                      Start Test →
-                    </Link>
-                  )}
-                </div>
               )}
             </div>
-          ))}
-
-          {/* FIXED BLOCK — GITHUB */}
-          <div className="border rounded-xl p-4 shadow-sm mb-4">
-            <div
-              className="flex justify-between cursor-pointer"
-              onClick={() => setOpenGithub(!openGithub)}
-            >
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                📦 Github Files
-              </h3>
-              <span className="text-xl">{openGithub ? "▲" : "▼"}</span>
-            </div>
-
-            {openGithub && (
-              <div className="mt-3 pl-4 border-l-2 border-indigo-300 text-sm text-gray-700">
-                {savedGithubLink ? (
-                  <div className="p-3 bg-green-100 text-green-800 rounded">
-                    <p className="font-semibold">Github Link Uploaded</p>
-                    <a
-                      href={savedGithubLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 underline break-all"
-                    >
-                      {savedGithubLink}
-                    </a>
-                  </div>
-                ) : (
-                  <>
-                    <p className="mb-3">Paste your Github repository link:</p>
-
-                    <input
-                      type="text"
-                      value={githubLink}
-                      onChange={(e) => setGithubLink(e.target.value)}
-                      placeholder="https://github.com/username/repo"
-                      className="w-full border p-2 rounded mb-3"
-                    />
-
-                    <button
-                      onClick={submitGithubLink}
-                      className="bg-indigo-600 text-white px-4 py-2 rounded shadow"
-                    >
-                      Submit Github Link
-                    </button>
-                  </>
-                )}
-
-                <hr className="my-4" />
-
-                <button className="mt-3 bg-gray-200 px-3 py-1 rounded">
-                  📂 View Github Files
-                </button>
-              </div>
-            )}
           </div>
-
-          {/* FIXED BLOCK — CERTIFICATE */}
-          <div className="border rounded-xl p-4 shadow-sm mb-4">
-            <div
-              className="flex justify-between cursor-pointer"
-              onClick={() => setOpenCertificate(!openCertificate)}
-            >
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                🧾 Certificate
-              </h3>
-              <span className="text-xl">
-                {openCertificate ? "▲" : "▼"}
-              </span>
-            </div>
-
-            {openCertificate && (
-              <div className="mt-3 pl-4 border-l-2 border-indigo-300 text-sm text-gray-700">
-                <p>
-                  Your certificate will be generated and sent to your registered
-                  email after you submit your Github project link.
-                </p>
-
-                <button
-                  onClick={sendCertificate}
-                  disabled={sendingCertificate}
-                  className={`mt-3 px-4 py-2 rounded text-white ${
-                    sendingCertificate
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-green-600"
-                  }`}
-                >
-                  {sendingCertificate
-                    ? "Sending..."
-                    : "⬇️ Send Certificate to Email"}
-                </button>
-              </div>
-            )}
-          </div>
-
         </div>
+
+        {/* MODULES */}
+        {course.is_enrolled && (
+          <div className="bg-white border rounded-2xl p-8">
+            <h2 className="text-2xl font-bold mb-5">Course Content</h2>
+
+            {modules.map((item) => (
+              <div key={item.id} className="border rounded-xl p-4 mb-4">
+                <div
+                  className={`flex justify-between ${
+                    !item.is_unlocked
+                      ? "opacity-50 cursor-not-allowed"
+                      : "cursor-pointer"
+                  }`}
+                  onClick={() =>
+                    toggleModule(item.id, item.is_unlocked)
+                  }
+                >
+                  <h3 className="font-semibold">
+                    {item.item_type === "video" ? "🎬" : "📝"}{" "}
+                    {item.title}
+                  </h3>
+                  <span>
+                    {!item.is_unlocked
+                      ? "🔒"
+                      : openModuleId === item.id
+                      ? "▲"
+                      : "▼"}
+                  </span>
+                </div>
+
+                {openModuleId === item.id && item.is_unlocked && (
+                  <div className="mt-4 pl-4 border-l">
+                    {item.item_type === "video" ? (
+                      <>
+                        <Link
+                          to={`/courses/${id}/video/${item.item_id}`}
+                        >
+                          <img
+                            src={
+                              item.thumbnail ||
+                              "/default-thumb.png"
+                            }
+                            className="w-40 h-24 rounded border"
+                          />
+                        </Link>
+
+                        {item.attachment_url && (
+                          <button
+                            onClick={() =>
+                              loadAttachmentTree(item.item_id)
+                            }
+                            className="mt-2 bg-gray-200 px-3 py-1 rounded"
+                          >
+                            📂 View Code Files
+                          </button>
+                        )}
+
+                        {tree && (
+                          <TreeView
+                            tree={tree}
+                            onSelect={(fp) =>
+                              loadFileContent(item.item_id, fp)
+                            }
+                          />
+                        )}
+
+                        {fileContent && (
+                          <pre className="bg-black text-green-400 p-4 mt-3 rounded">
+                            {fileContent}
+                          </pre>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          disabled={
+                            attemptedTests[item.item_id]
+                          }
+                          onClick={() =>
+                            handleStartTest(item.item_id)
+                          }
+                          className={`px-4 py-2 rounded-md mt-4 text-white ${
+                            attemptedTests[item.item_id]
+                              ? "bg-gray-400"
+                              : "bg-green-600 hover:bg-green-700"
+                          }`}
+                        >
+                          {attemptedTests[item.item_id]
+                            ? "Test Attempted ✔"
+                            : "Start Test →"}
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* GITHUB */}
+        <div
+          className={`border rounded-xl p-4 ${
+            !githubUnlocked && "opacity-50"
+          }`}
+        >
+          <div
+            className="flex justify-between cursor-pointer"
+            onClick={() =>
+              githubUnlocked && setOpenGithub(!openGithub)
+            }
+          >
+            <h3 className="font-semibold">📦 Github Files</h3>
+            <span>{openGithub ? "▲" : "▼"}</span>
+          </div>
+
+          {openGithub && githubUnlocked && (
+            <div className="mt-3">
+              <input
+                value={savedGithubLink || githubLink}
+                onChange={(e) =>
+                  setGithubLink(e.target.value)
+                }
+                disabled={courseCompleted}
+                className="w-full border p-2 rounded mb-2"
+              />
+
+              <button
+                onClick={submitGithubLink}
+                disabled={courseCompleted}
+                className="px-4 py-2 rounded text-white bg-indigo-600"
+              >
+                {courseCompleted
+                  ? "Submitted ✔"
+                  : "Submit Github Link"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* COMPLETED */}
+        {courseCompleted && (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+            <h3 className="text-xl font-bold text-green-700 mb-2">
+              🎉 Course Completed Successfully!
+            </h3>
+            <Link
+              to="/my-certificates"
+              className="inline-block bg-green-600 text-white px-4 py-2 rounded"
+            >
+              View My Certificates
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

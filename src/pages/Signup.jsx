@@ -6,7 +6,7 @@ import { FiMail, FiUser, FiLock } from "react-icons/fi";
 function Signup() {
   const [formData, setFormData] = useState({
     email: "",
-    username: "",
+    full_name: "",
     password: "",
     password2: "",
   });
@@ -16,39 +16,51 @@ function Signup() {
   const { signup } = useAuth();
   const navigate = useNavigate();
 
-  const handleChange = (e) =>
+const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    if (formData.password !== formData.password2) {
-      setError("Passwords do not match");
-      setLoading(false);
-      return;
+  console.log("📤 Signup payload:", formData);
+
+  if (formData.password !== formData.password2) {
+    setError("Passwords do not match");
+    setLoading(false);
+    return;
+  }
+
+  try {
+    await signup(
+      formData.email,
+      formData.full_name,
+      formData.password,
+      formData.password2
+    );
+
+    alert("Signup successful! Please login to continue.");
+    navigate("/auth/login");
+
+  } catch (err) {
+    console.error("❌ Signup error:", err);
+    console.error("❌ Backend response:", err.response?.data);
+
+    const data = err.response?.data;
+
+    if (data?.errors) {
+      const messages = Object.values(data.errors).flat().join(" ");
+      setError(messages);
+    } else {
+      setError("Signup failed. Please try again.");
     }
 
-    try {
-      await signup(
-        formData.email,
-        formData.username,
-        formData.password,
-        formData.password2
-      );
-      alert("Signup successful! Please login to continue.");
-      navigate("/auth/login");
-    } catch (err) {
-      setError(
-        err.response?.data?.error ||
-          err.response?.data?.password?.[0] ||
-          "Signup failed"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
   <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-100 px-6 py-10">
@@ -119,14 +131,14 @@ function Signup() {
             <div className="flex items-center border rounded-lg mt-1 px-3">
               <FiUser className="text-gray-500" />
               <input
-                type="text"
-                name="username"
-                required
-                value={formData.username}
-                onChange={handleChange}
-                placeholder="Enter username"
-                className="w-full p-2 bg-transparent outline-none"
-              />
+  type="text"
+  name="full_name"
+  required
+  value={formData.full_name}
+  onChange={handleChange}
+  placeholder="Full name"
+/>
+
             </div>
           </div>
 

@@ -72,3 +72,18 @@ html {
   width: 80%;
   opacity: 0.5;
 }
+
+
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto; /* ✅ REQUIRED */
+}
+
+#root {
+  min-height: 100%;
+}
+
+/* KEEP YOUR EXISTING STYLES BELOW */

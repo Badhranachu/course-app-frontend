@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { FiBell, FiMenu, FiX, FiChevronDown } from "react-icons/fi";
 import "./Navbar.css";
 
 function Navbar() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, logout } = useAuth();
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -19,7 +18,13 @@ function Navbar() {
     navigate("/auth/login");
   };
 
-  // Close dropdown when clicking outside
+  // ⭐ Internship navigation
+  const handleApply = () => {
+    if (user) navigate("/dashboard");
+    else navigate("/auth/signup");
+  };
+
+  // Close dropdown on outside click
   useEffect(() => {
     function handleClickOutside(e) {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
@@ -52,7 +57,14 @@ function Navbar() {
             Home
           </Link>
 
-          {/* If NOT logged in → show Login & Signup */}
+          {/* ⭐ Internship Text Link */}
+          <span
+            onClick={handleApply}
+            className="text-gray-700 hover:text-indigo-600 transition font-medium cursor-pointer"
+          >
+            Internship
+          </span>
+
           {!user ? (
             <>
               <Link
@@ -71,7 +83,7 @@ function Navbar() {
             </>
           ) : (
             <>
-              {/* Notification */}
+              {/* Notification Icon */}
               <button className="relative text-gray-700 hover:text-indigo-600 transition">
                 <FiBell size={22} />
                 <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
@@ -91,10 +103,19 @@ function Navbar() {
                 </button>
 
                 {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg py-2 border border-gray-100 animate-fadeIn">
+                  <div className="absolute right-0 mt-2 w-52 bg-white shadow-lg rounded-lg py-2 border border-gray-100 animate-fadeIn">
+
                     <p className="px-4 py-2 text-gray-700 font-medium border-b">
                       {user.username || user.email}
                     </p>
+
+                    <Link
+                      to="/my-certificates"
+                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100 font-medium"
+                      onClick={() => setProfileOpen(false)}
+                    >
+                      🎓 My Certificates
+                    </Link>
 
                     <button
                       onClick={handleLogout}
@@ -118,7 +139,7 @@ function Navbar() {
         </button>
       </div>
 
-      {/* Mobile Dropdown Menu */}
+      {/* Mobile Dropdown */}
       {menuOpen && (
         <div className="md:hidden bg-white border-t shadow-md animate-slideDown">
 
@@ -129,6 +150,17 @@ function Navbar() {
           >
             Home
           </Link>
+
+          {/* ⭐ Mobile Internship */}
+          <span
+            onClick={() => {
+              handleApply();
+              setMenuOpen(false);
+            }}
+            className="block py-3 px-4 text-gray-700 hover:text-indigo-600 font-medium cursor-pointer"
+          >
+            Internship
+          </span>
 
           {!user ? (
             <>
@@ -153,6 +185,14 @@ function Navbar() {
               <p className="px-4 py-3 text-gray-700 font-medium border-t">
                 {user.username || user.email}
               </p>
+
+              <Link
+                to="/my-certificates"
+                onClick={() => setMenuOpen(false)}
+                className="block py-3 px-4 text-gray-700 hover:bg-gray-100 font-medium"
+              >
+                🎓 My Certificates
+              </Link>
 
               <button
                 onClick={() => {

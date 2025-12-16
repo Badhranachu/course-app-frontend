@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 import Signup from "./pages/Signup";
@@ -8,9 +13,13 @@ import CourseDetail from "./pages/CourseDetail";
 import VideoPlayer from "./pages/VideoPlayer";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
-import TestPage from "./pages/TestPage";      // ✅ IMPORTANT IMPORT
+import TestPage from "./pages/TestPage";
 import TestHistoryPage from "./pages/TestHistoryPage";
+import MyCertificates from "./pages/MyCertificates";
 
+// ===============================
+// Private Route Wrapper
+// ===============================
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
 
@@ -25,21 +34,27 @@ function PrivateRoute({ children }) {
   return user ? children : <Navigate to="/auth/login" />;
 }
 
+// ===============================
+// App
+// ===============================
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Navbar />
+        {/* NAVBAR */}
+        <Navbar />
 
+        {/* MAIN CONTENT */}
+        <main className="pt-16 min-h-[calc(100vh-4rem)] bg-gray-50 overflow-y-auto">
           <Routes>
+            {/* Public */}
             <Route path="/" element={<Home />} />
 
             {/* Auth */}
             <Route path="/auth/signup" element={<Signup />} />
             <Route path="/auth/login" element={<Login />} />
 
-            {/* Private Routes */}
+            {/* Dashboard */}
             <Route
               path="/dashboard"
               element={
@@ -49,6 +64,7 @@ function App() {
               }
             />
 
+            {/* Course Detail */}
             <Route
               path="/course/:id"
               element={
@@ -58,18 +74,21 @@ function App() {
               }
             />
 
-            <Route
-              path="/video/:id"
-              element={
-                <PrivateRoute>
-                  <VideoPlayer />
-                </PrivateRoute>
-              }
-            />
+            {/* Video Player */}
+              <Route
+  path="/courses/:courseId/video/:videoId"
+  element={
+    <PrivateRoute>
+      <VideoPlayer />
+    </PrivateRoute>
+  }
+/>
 
-            {/* ⭐ TEST PAGE MUST ALSO BE PRIVATE ⭐ */}
+
+            {/* ✅ FIXED TEST ROUTE (IMPORTANT) */}
+            {/* Matches backend + TestPage useParams */}
             <Route
-              path="/test/:id"
+              path="/courses/:course_id/tests/:test_id"
               element={
                 <PrivateRoute>
                   <TestPage />
@@ -77,9 +96,10 @@ function App() {
               }
             />
 
-
-            <Route
-  path="/course/:id/test-history"
+            {/* Test History */}
+            {/* ✅ Test History — MUST BE FIRST */}
+<Route
+  path="/courses/:id/tests/history"
   element={
     <PrivateRoute>
       <TestHistoryPage />
@@ -87,11 +107,30 @@ function App() {
   }
 />
 
+{/* ✅ Single Test */}
+<Route
+  path="/courses/:course_id/tests/:test_id"
+  element={
+    <PrivateRoute>
+      <TestPage />
+    </PrivateRoute>
+  }
+/>
 
-            {/* Catch all */}
+            {/* Certificates */}
+            <Route
+              path="/my-certificates"
+              element={
+                <PrivateRoute>
+                  <MyCertificates />
+                </PrivateRoute>
+              }
+            />
+
+            {/* Fallback */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
-        </div>
+        </main>
       </Router>
     </AuthProvider>
   );

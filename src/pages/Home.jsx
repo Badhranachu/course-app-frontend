@@ -168,18 +168,21 @@ const handleApply = () => {
                       <p className="text-lg text-gray-100 mb-6">{s.sub}</p>
 
                       <div className="flex flex-wrap gap-3">
-                        <button
+                        {/* <button
   onClick={handleApply}
   className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-md font-semibold shadow"
 >
   Apply for Internship
-</button>
+</button> */}
                         <a
-                          href="#services"
-                          className="inline-block border border-white/60 text-white px-5 py-3 rounded-md font-medium hover:bg-white/10"
-                        >
-                          Explore Services
-                        </a>
+  href="#services"
+  className="inline-block px-5 py-3 rounded-md font-medium text-white"
+  style={{ backgroundColor: "rgb(67 56 202)" }}
+>
+  Explore Services
+</a>
+
+
                       </div>
                     </div>
                   </div>

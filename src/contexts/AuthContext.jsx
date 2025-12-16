@@ -1,76 +1,71 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import api from '../services/api'
+import { createContext, useContext, useState, useEffect } from "react";
+import api from "../services/api";
 
-const AuthContext = createContext()
+const AuthContext = createContext();
 
 export function useAuth() {
-  return useContext(AuthContext)
+  return useContext(AuthContext);
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
+  // 🔁 Restore session on refresh
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      fetchUser()
-    } else {
-      setLoading(false)
-    }
-  }, [])
+    const token = localStorage.getItem("access_token");
 
-  const fetchUser = async () => {
-    try {
-      const response = await api.get('/auth/me/')
-      setUser(response.data)
-    } catch (error) {
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
-      delete api.defaults.headers.common['Authorization']
-      setUser(null)
-    } finally {
-      setLoading(false)
+    if (!token) {
+      setLoading(false);
+      return;
     }
-  }
+
+    api.defaults.headers.common["Authorization"] = `Token ${token}`;
+
+    api
+      .get("/auth/me/")
+      .then((res) => setUser(res.data))
+      .catch(() => {
+        localStorage.removeItem("access_token");
+        delete api.defaults.headers.common["Authorization"];
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   const login = async (email, password) => {
-    const response = await api.post('/auth/login/', { email, password })
-    const { access, refresh, user: userData } = response.data
-    localStorage.setItem('access_token', access)
-    localStorage.setItem('refresh_token', refresh)
-    api.defaults.headers.common['Authorization'] = `Bearer ${access}`
-    setUser(userData)
-    return response.data
-  }
+    const res = await api.post("/auth/login/", { email, password });
 
-  const signup = async (email, username, password, password2) => {
-    const response = await api.post('/auth/signup/', {
+    const { token, user } = res.data;
+
+    localStorage.setItem("access_token", token);
+    api.defaults.headers.common["Authorization"] = `Token ${token}`;
+
+    setUser(user);
+    return res.data;
+  };
+
+  const signup = async (email, full_name, password, password2) => {
+    const res = await api.post("/auth/signup/", {
       email,
-      username,
+      full_name,
       password,
-      password2
-    })
-    
-    return true
-  }
+      password2,
+    });
+    return res.data;
+  };
 
   const logout = () => {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-    delete api.defaults.headers.common['Authorization']
-    setUser(null)
-  }
+    localStorage.removeItem("access_token");
+    delete api.defaults.headers.common["Authorization"];
+    setUser(null);
+  };
 
-  const value = {
-    user,
-    login,
-    signup,
-    logout,
-    loading
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider
+      value={{ user, login, signup, logout, loading }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
-
