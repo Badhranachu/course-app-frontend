@@ -9,7 +9,7 @@ import TreeView from "../components/TreeView";
 function formatDescription(text) {
   if (!text) return "";
   return text
-    .replace(/^- (.*)$/gm, "<li>$1</li>")
+    . replace(/^- (.*)$/gm, "<li>$1</li>")
     .replace(/^\d+\. (.*)$/gm, "<li>$1</li>")
     .replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>")
     .replace(/\n/g, "<br>");
