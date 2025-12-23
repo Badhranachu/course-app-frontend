@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { FiBell, FiMenu, FiX, FiChevronDown } from "react-icons/fi";
 import "./Navbar.css";
+import bekolaLogo from "../assets/bekola-logo.png";
 
 function Navbar() {
   const navigate = useNavigate();
@@ -41,11 +42,16 @@ function Navbar() {
 
         {/* Logo */}
         <Link
-          to="/"
-          className="text-2xl font-bold text-indigo-600 tracking-tight"
-        >
-          Bekola
-        </Link>
+        to="/"
+        className="flex items-center gap-2"
+      >
+        <img
+          src={bekolaLogo}
+          alt="Bekola Logo"
+className="h-20 w-auto object-contain"
+        />
+      </Link>
+
 
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-8">

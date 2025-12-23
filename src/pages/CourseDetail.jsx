@@ -34,29 +34,104 @@ export default function CourseDetail() {
   const [savedGithubLink, setSavedGithubLink] = useState(null);
   const [moduleProgress, setModuleProgress] = useState([]);
 
-useEffect(() => {
-  if (course?.is_enrolled) {
-    fetchModuleProgress();
-  }
-}, [course?.is_enrolled]);
+  // ------------------------------
+  // Load module progress
+  // ------------------------------
+  useEffect(() => {
+    if (course?.is_enrolled) {
+      fetchModuleProgress();
+    }
+  }, [course?.is_enrolled]);
 
+  // ------------------------------
+  // Load Razorpay script ONCE
+  // ------------------------------
+  useEffect(() => {
+    if (window.Razorpay) return;
 
-const fetchModuleProgress = async () => {
-  try {
-    const res = await api.get(
-      `/courses/${id}/module-progress/`
-    );
-    setModuleProgress(res.data.modules || []);
-  } catch (err) {
-    console.error("Module progress error", err);
-    setModuleProgress([]);
-  }
-};
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => console.log("✅ Razorpay loaded");
+    document.body.appendChild(script);
+  }, []);
 
+  // ------------------------------
+  // ENROLL + PAYMENT
+  // ------------------------------
+  const handleEnrollNow = async () => {
+    try {
+      if (!window.Razorpay) {
+        alert("Razorpay not loaded. Please refresh.");
+        return;
+      }
 
+      // 1️⃣ Create order
+      const res = await api.post("/payment/create-order/", {
+        course_id: id,
+      });
 
+      const { order_id, amount, currency, key_id } = res.data;
 
+      // 2️⃣ Razorpay options
+      const options = {
+        key: key_id,
+        amount,
+        currency,
+        name: "Course App",
+        description: course.title,
+        order_id,
 
+        handler: async (response) => {
+          try {
+            await api.post("/payment/verify/", {
+              course_id: id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
+            await fetchCourse();
+            await fetchModules();
+            alert("🎉 Enrollment successful");
+          } catch {
+            alert("Payment verification failed");
+          }
+        },
+
+        modal: {
+          ondismiss: () => alert("Payment cancelled"),
+        },
+
+        theme: { color: "#4f46e5" },
+      };
+
+      const rzp = new window.Razorpay(options);
+
+      // 🔴 IMPORTANT: failure handler
+      rzp.on("payment.failed", (resp) => {
+        console.error("Razorpay error:", resp.error);
+        alert(resp.error.description || "Payment failed");
+      });
+
+      rzp.open();
+    } catch (err) {
+      console.error("Enroll error:", err);
+      alert(err?.response?.data?.error || err.message || "Payment failed");
+    }
+  };
+
+  // ------------------------------
+  // Module progress
+  // ------------------------------
+  const fetchModuleProgress = async () => {
+    try {
+      const res = await api.get(`/courses/${id}/module-progress/`);
+      setModuleProgress(res.data.modules || []);
+    } catch {
+      setModuleProgress([]);
+    }
+  };
 
   // ------------------------------
   // MODULE TOGGLE
@@ -180,12 +255,11 @@ const fetchModuleProgress = async () => {
   // RULES
   // ------------------------------
   const lastModule = [...moduleProgress]
-  .sort((a, b) => a.order - b.order)
-  .slice(-1)[0];
+    .sort((a, b) => a.order - b.order)
+    .slice(-1)[0];
 
-const githubUnlocked =
-  Boolean(lastModule) && lastModule.is_completed === true;
-
+  const githubUnlocked =
+    Boolean(lastModule) && lastModule.is_completed === true;
 
   const courseCompleted = Boolean(savedGithubLink);
 
@@ -206,7 +280,6 @@ const githubUnlocked =
             }}
           />
 
-          {/* STATUS BAR */}
           <div className="flex justify-between items-center mt-6">
             <div className="text-2xl font-bold text-indigo-600">
               ₹{course.price}
@@ -227,9 +300,12 @@ const githubUnlocked =
                   ✓ Enrolled
                 </span>
               ) : (
-                <span className="px-4 py-2 bg-gray-300 rounded">
-                  Not Enrolled
-                </span>
+                <button
+                  onClick={handleEnrollNow}
+                  className="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                >
+                  Enroll Now →
+                </button>
               )}
             </div>
           </div>
@@ -245,7 +321,7 @@ const githubUnlocked =
                 <div
                   className={`flex justify-between ${
                     !item.is_unlocked
-                      ? "opacity-50 cursor-not-allowed"
+                      ? "opacity-50  cursor-not-allowed"
                       : "cursor-pointer"
                   }`}
                   onClick={() =>
@@ -253,8 +329,7 @@ const githubUnlocked =
                   }
                 >
                   <h3 className="font-semibold">
-                    {item.item_type === "video" ? "🎬" : "📝"}{" "}
-                    {item.title}
+                    {item.item_type === "video" ? "🎬" : "📝"} {item.title}
                   </h3>
                   <span>
                     {!item.is_unlocked
@@ -269,14 +344,9 @@ const githubUnlocked =
                   <div className="mt-4 pl-4 border-l">
                     {item.item_type === "video" ? (
                       <>
-                        <Link
-                          to={`/courses/${id}/video/${item.item_id}`}
-                        >
+                        <Link to={`/courses/${id}/video/${item.item_id}`}>
                           <img
-                            src={
-                              item.thumbnail ||
-                              "/default-thumb.png"
-                            }
+                            src={item.thumbnail || "/default-thumb.png"}
                             className="w-40 h-24 rounded border"
                           />
                         </Link>
@@ -308,25 +378,21 @@ const githubUnlocked =
                         )}
                       </>
                     ) : (
-                      <>
-                        <button
-                          disabled={
-                            attemptedTests[item.item_id]
-                          }
-                          onClick={() =>
-                            handleStartTest(item.item_id)
-                          }
-                          className={`px-4 py-2 rounded-md mt-4 text-white ${
-                            attemptedTests[item.item_id]
-                              ? "bg-gray-400"
-                              : "bg-green-600 hover:bg-green-700"
-                          }`}
-                        >
-                          {attemptedTests[item.item_id]
-                            ? "Test Attempted ✔"
-                            : "Start Test →"}
-                        </button>
-                      </>
+                      <button
+                        disabled={attemptedTests[item.item_id]}
+                        onClick={() =>
+                          handleStartTest(item.item_id)
+                        }
+                        className={`px-4 py-2 rounded-md mt-4 text-white ${
+                          attemptedTests[item.item_id]
+                            ? "bg-gray-400"
+                            : "bg-green-600 hover:bg-green-700"
+                        }`}
+                      >
+                        {attemptedTests[item.item_id]
+                          ? "Test Attempted ✔"
+                          : "Start Test →"}
+                      </button>
                     )}
                   </div>
                 )}
@@ -336,11 +402,7 @@ const githubUnlocked =
         )}
 
         {/* GITHUB */}
-        <div
-          className={`border rounded-xl p-4 ${
-            !githubUnlocked && "opacity-50"
-          }`}
-        >
+        <div className={`border rounded-xl p-4 ${!githubUnlocked && "opacity-50"}`}>
           <div
             className="flex justify-between cursor-pointer"
             onClick={() =>
@@ -355,9 +417,7 @@ const githubUnlocked =
             <div className="mt-3">
               <input
                 value={savedGithubLink || githubLink}
-                onChange={(e) =>
-                  setGithubLink(e.target.value)
-                }
+                onChange={(e) => setGithubLink(e.target.value)}
                 disabled={courseCompleted}
                 className="w-full border p-2 rounded mb-2"
               />
@@ -367,9 +427,7 @@ const githubUnlocked =
                 disabled={courseCompleted}
                 className="px-4 py-2 rounded text-white bg-indigo-600"
               >
-                {courseCompleted
-                  ? "Submitted ✔"
-                  : "Submit Github Link"}
+                {courseCompleted ? "Submitted ✔" : "Submit Github Link"}
               </button>
             </div>
           )}

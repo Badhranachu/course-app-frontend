@@ -1,7 +1,7 @@
 /* --------------------------------------------- */
-/* GOOGLE FONT - POPPINS (global premium font)   */
+/* GOOGLE FONT - POPPINS                          */
 /* --------------------------------------------- */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap");
 
 /* --------------------------------------------- */
 /* TAILWIND BASE                                 */
@@ -11,28 +11,60 @@
 @tailwind utilities;
 
 /* --------------------------------------------- */
-/* GLOBAL FONT + RESET                           */
+/* GLOBAL RESET                                  */
 /* --------------------------------------------- */
 html, body, #root {
   margin: 0;
   padding: 0;
-  font-family: 'Poppins', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  height: 100%;
+  font-family: "Poppins", sans-serif;
+  background: white;
+  color: #0f172a;
 }
 
 /* --------------------------------------------- */
-/* SMOOTH SCROLL                                 */
+/* BRAND COLOR SYSTEM (FROM LOGO IMAGE)           */
 /* --------------------------------------------- */
-html {
-  scroll-behavior: smooth;
+:root {
+  --brand-blue: #0096ff;
+  --brand-deep-blue: #2a4bbd;
+  --brand-purple: #8a2be2;
+  --brand-pink: #c71585;
+  --brand-orange: #ff8c00;
+  --brand-violet: #4b0082;
+
+  --brand-gradient: linear-gradient(
+    135deg,
+    #0096ff,
+    #2a4bbd,
+    #8a2be2,
+    #c71585,
+    #ff8c00
+  );
+}
+
+/* --------------------------------------------- */
+/* BRAND UTILITIES                               */
+/* --------------------------------------------- */
+.bg-brand {
+  background: var(--brand-gradient) !important;
+}
+
+.text-brand {
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-glow {
+  box-shadow: 0 8px 30px rgba(138, 43, 226, 0.35);
 }
 
 /* --------------------------------------------- */
 /* MARQUEE ANIMATION                             */
 /* --------------------------------------------- */
 @keyframes marquee {
-  0%   { transform: translateX(0); }
+  0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
 
@@ -42,48 +74,16 @@ html {
 }
 
 /* --------------------------------------------- */
-/* OPTIONAL: Fade overlay for hero text          */
+/* SECTION HELPERS                               */
 /* --------------------------------------------- */
-.hero-text-bg {
-  /* background: linear-gradient(90deg, rgba(0,0,0,0.6), rgba(0,0,0,0.25)); */
-  padding: 4px 12px;
-  border-radius: 6px;
-}
-
-/* --------------------------------------------- */
-/* Focus ring for premium buttons                */
-/* --------------------------------------------- */
-.btn-pill:focus {
-  outline: 3px solid rgba(79,70,229,0.25);
-  outline-offset: 3px;
-}
-
-
-
-.section-gap {
-  padding-top: 5rem;
-  padding-bottom: 5rem;
-}
-
 .section-divider {
   height: 1px;
-  background: linear-gradient(to right, transparent, #c7d2fe, transparent);
-  margin: 4rem auto;
   width: 80%;
-  opacity: 0.5;
+  margin: 4rem auto;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(138,43,226,0.4),
+    transparent
+  );
 }
-
-
-
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  overflow-y: auto; /* ✅ REQUIRED */
-}
-
-#root {
-  min-height: 100%;
-}
-
-/* KEEP YOUR EXISTING STYLES BELOW */

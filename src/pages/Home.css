@@ -1,39 +1,42 @@
-/* Corporate hero slider fix */
+/* HERO & MISSION SLIDES */
 .hero-slide {
   background-size: cover !important;
-  background-position: center center !important;
+  background-position: center !important;
   background-repeat: no-repeat !important;
   height: 82vh !important;
-  width: 100%;
-  object-fit: cover;
 }
 
-/* Corporate mission slide fix */
 .mission-slide {
   background-size: cover !important;
-  background-position: center center !important;
+  background-position: center !important;
   background-repeat: no-repeat !important;
   height: 56vh !important;
-  width: 100%;
-  object-fit: cover;
 }
 
-/* Fade smoothness fix */
+/* SMOOTH FADE */
 .swiper-slide {
   transition: opacity 0.8s ease-in-out !important;
 }
 
-/* Fix dots */
+/* DOTS – BRAND GRADIENT */
 .swiper-pagination-bullet {
-  background: #ffffff !important;
-  opacity: 0.5 !important;
-}
-.swiper-pagination-bullet-active {
-  background: #4f46e5 !important; /* indigo brand color */
-  opacity: 1 !important;
+  background: #e5e7eb !important;
+  opacity: 0.6;
 }
 
-/* Fix navigation arrows */
+.swiper-pagination-bullet-active {
+  background: linear-gradient(
+    135deg,
+    #0096ff,
+    #2a4bbd,
+    #8a2be2,
+    #c71585,
+    #ff8c00
+  ) !important;
+  opacity: 1;
+}
+
+/* ARROWS */
 .swiper-button-prev,
 .swiper-button-next {
   color: white !important;
