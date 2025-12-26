@@ -11,7 +11,6 @@ function Navbar() {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-
   const profileRef = useRef(null);
 
   const handleLogout = () => {
@@ -19,21 +18,21 @@ function Navbar() {
     navigate("/auth/login");
   };
 
-  // ⭐ Internship navigation
   const handleApply = () => {
     if (user) navigate("/dashboard");
     else navigate("/auth/signup");
   };
 
-  // Close dropdown on outside click
+  // Close profile dropdown on outside click
   useEffect(() => {
-    function handleClickOutside(e) {
+    const handleClickOutside = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
         setProfileOpen(false);
       }
-    }
+    };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -41,65 +40,65 @@ function Navbar() {
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
 
         {/* Logo */}
-        <Link
-        to="/"
-        className="flex items-center gap-2"
-      >
-        <img
-          src={bekolaLogo}
-          alt="Bekola Logo"
-className="h-20 w-auto object-contain"
-        />
-      </Link>
+        <Link to="/" className="flex items-center gap-2">
+          <img
+            src={bekolaLogo}
+            alt="Bekola Logo"
+            className="h-20 w-auto object-contain"
+          />
+        </Link>
 
-
-        {/* Desktop Menu */}
+        {/* ================= DESKTOP MENU ================= */}
         <div className="hidden md:flex items-center gap-8">
 
-          <Link
-            to="/"
-            className="text-gray-700 hover:text-indigo-600 transition font-medium"
-          >
+          <Link to="/" className="text-gray-700 hover:text-indigo-600 font-medium">
             Home
           </Link>
 
-          {/* ⭐ Internship Text Link */}
           <span
             onClick={handleApply}
-            className="text-gray-700 hover:text-indigo-600 transition font-medium cursor-pointer"
+            className="text-gray-700 hover:text-indigo-600 font-medium cursor-pointer"
           >
             Internship
           </span>
+
+          {/* ✅ Certificate Verification */}
+          <Link
+            to="/verify-certificate"
+            className="text-gray-700 hover:text-indigo-600 font-medium"
+          >
+            Verify Certificate
+          </Link>
 
           {!user ? (
             <>
               <Link
                 to="/auth/login"
-                className="text-gray-700 hover:text-indigo-600 transition font-medium"
+                className="text-gray-700 hover:text-indigo-600 font-medium"
               >
                 Login
               </Link>
 
               <Link
                 to="/auth/signup"
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-md font-medium shadow-md transition"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-md font-medium shadow-md"
               >
                 Sign Up
               </Link>
             </>
           ) : (
             <>
-              {/* Notification Icon */}
-              <button className="relative text-gray-700 hover:text-indigo-600 transition">
+              {/* Notification */}
+              <button className="relative text-gray-700 hover:text-indigo-600">
                 <FiBell size={22} />
-                <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+                <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full" />
               </button>
 
-              {/* Profile Dropdown */}
+              {/* Profile */}
               <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center gap-2 text-gray-700 hover:text-indigo-600 transition"
+                  className="flex items-center gap-2 text-gray-700 hover:text-indigo-600"
                 >
                   <div className="w-9 h-9 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold">
                     {user.username?.charAt(0).toUpperCase() ||
@@ -109,23 +108,23 @@ className="h-20 w-auto object-contain"
                 </button>
 
                 {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-52 bg-white shadow-lg rounded-lg py-2 border border-gray-100 animate-fadeIn">
+                  <div className="absolute right-0 mt-2 w-52 bg-white shadow-lg rounded-lg py-2 border">
 
-                    <p className="px-4 py-2 text-gray-700 font-medium border-b">
+                    <p className="px-4 py-2 font-medium border-b">
                       {user.username || user.email}
                     </p>
 
                     <Link
                       to="/my-certificates"
-                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100 font-medium"
                       onClick={() => setProfileOpen(false)}
+                      className="block px-4 py-2 hover:bg-gray-100"
                     >
                       🎓 My Certificates
                     </Link>
 
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 transition font-medium"
+                      className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
                     >
                       Logout
                     </button>
@@ -136,7 +135,7 @@ className="h-20 w-auto object-contain"
           )}
         </div>
 
-        {/* Mobile Menu Button */}
+        {/* ================= MOBILE MENU BUTTON ================= */}
         <button
           className="md:hidden text-gray-700"
           onClick={() => setMenuOpen(!menuOpen)}
@@ -145,35 +144,43 @@ className="h-20 w-auto object-contain"
         </button>
       </div>
 
-      {/* Mobile Dropdown */}
+      {/* ================= MOBILE MENU ================= */}
       {menuOpen && (
-        <div className="md:hidden bg-white border-t shadow-md animate-slideDown">
+        <div className="md:hidden bg-white border-t shadow-md">
 
           <Link
             to="/"
             onClick={() => setMenuOpen(false)}
-            className="block py-3 px-4 text-gray-700 hover:bg-gray-100 font-medium"
+            className="block py-3 px-4 hover:bg-gray-100"
           >
             Home
           </Link>
 
-          {/* ⭐ Mobile Internship */}
           <span
             onClick={() => {
               handleApply();
               setMenuOpen(false);
             }}
-            className="block py-3 px-4 text-gray-700 hover:text-indigo-600 font-medium cursor-pointer"
+            className="block py-3 px-4 hover:bg-gray-100 cursor-pointer"
           >
             Internship
           </span>
+
+          {/* ✅ Verify Certificate (Mobile) */}
+          <Link
+            to="/verify-certificate"
+            onClick={() => setMenuOpen(false)}
+            className="block py-3 px-4 hover:bg-gray-100"
+          >
+            Verify Certificate
+          </Link>
 
           {!user ? (
             <>
               <Link
                 to="/auth/login"
                 onClick={() => setMenuOpen(false)}
-                className="block py-3 px-4 text-gray-700 hover:bg-gray-100 font-medium"
+                className="block py-3 px-4 hover:bg-gray-100"
               >
                 Login
               </Link>
@@ -181,21 +188,21 @@ className="h-20 w-auto object-contain"
               <Link
                 to="/auth/signup"
                 onClick={() => setMenuOpen(false)}
-                className="block py-3 px-4 text-indigo-600 hover:bg-gray-100 font-semibold"
+                className="block py-3 px-4 text-indigo-600 font-semibold"
               >
                 Sign Up
               </Link>
             </>
           ) : (
             <>
-              <p className="px-4 py-3 text-gray-700 font-medium border-t">
+              <p className="px-4 py-3 border-t font-medium">
                 {user.username || user.email}
               </p>
 
               <Link
                 to="/my-certificates"
                 onClick={() => setMenuOpen(false)}
-                className="block py-3 px-4 text-gray-700 hover:bg-gray-100 font-medium"
+                className="block py-3 px-4 hover:bg-gray-100"
               >
                 🎓 My Certificates
               </Link>
@@ -205,7 +212,7 @@ className="h-20 w-auto object-contain"
                   handleLogout();
                   setMenuOpen(false);
                 }}
-                className="w-full text-left px-4 py-3 text-red-600 font-medium hover:bg-red-50"
+                className="w-full text-left px-4 py-3 text-red-600 hover:bg-red-50"
               >
                 Logout
               </button>

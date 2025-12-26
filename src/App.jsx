@@ -16,6 +16,7 @@ import Home from "./pages/Home";
 import TestPage from "./pages/TestPage";
 import TestHistoryPage from "./pages/TestHistoryPage";
 import MyCertificates from "./pages/MyCertificates";
+import CertificateVerify from "./pages/CertificateVerify";
 
 // ===============================
 // Private Route Wrapper
@@ -126,6 +127,9 @@ function App() {
                 </PrivateRoute>
               }
             />
+
+            <Route path="/verify-certificate" element={<CertificateVerify />} />
+
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" />} />
