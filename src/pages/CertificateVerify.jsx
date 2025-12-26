@@ -16,7 +16,7 @@ export default function CertificateCheck() {
     setError("");
 
     try {
-      const res = await fetch(`${API_BASE}/api/certificate/check/`, {
+      const res = await fetch(`${API_BASE}/certificate/check/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
