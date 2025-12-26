@@ -7,7 +7,7 @@ export default function VideoPlayer() {
   const timerRef = useRef(null);
   const [error, setError] = useState("");
 
-  const API_BASE = import.meta.env.VITE_API_BASE;
+  const API_BASE = import.meta.env.VITE_API_BASE; // "/api"
   const token = localStorage.getItem("access_token");
 
   // ===============================
@@ -19,10 +19,12 @@ export default function VideoPlayer() {
       return;
     }
 
-    const url = `${API_BASE}/api/courses/${courseId}/videos/${videoId}/stream/`;
+    const url = `${API_BASE}/courses/${courseId}/videos/${videoId}/stream/`;
 
     fetch(url, {
-      headers: { Authorization: `Token ${token}` },
+      headers: {
+        Authorization: `Token ${token}`,
+      },
     })
       .then((res) => {
         if (!res.ok) throw new Error("Forbidden");
@@ -32,7 +34,7 @@ export default function VideoPlayer() {
         videoRef.current.src = URL.createObjectURL(blob);
       })
       .catch(() => setError("Video access denied"));
-  }, [courseId, videoId]);
+  }, [courseId, videoId, token]);
 
   // ===============================
   // SEND PROGRESS EVERY 5s
@@ -41,20 +43,17 @@ export default function VideoPlayer() {
     const video = videoRef.current;
     if (!video || video.currentTime === 0) return;
 
-    await fetch(
-      `${API_BASE}/api/courses/${courseId}/videos/progress/`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`,
-        },
-        body: JSON.stringify({
-          video_id: videoId,
-          current_time: Math.floor(video.currentTime),
-        }),
-      }
-    );
+    await fetch(`${API_BASE}/courses/${courseId}/videos/progress/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Token ${token}`,
+      },
+      body: JSON.stringify({
+        video_id: videoId,
+        current_time: Math.floor(video.currentTime),
+      }),
+    });
   };
 
   const startTracking = () => {
@@ -71,57 +70,28 @@ export default function VideoPlayer() {
     sendProgress();
   };
 
-  // ===============================
-  // DOUBLE TAP SEEK
-  // ===============================
-  const handleDoubleTap = (e) => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const rect = video.getBoundingClientRect();
-    const x = e.clientX || e.touches?.[0]?.clientX;
-    const mid = rect.left + rect.width / 2;
-
-    video.currentTime =
-      x < mid
-        ? Math.max(video.currentTime - 10, 0)
-        : Math.min(video.currentTime + 10, video.duration);
-  };
-
   useEffect(() => () => stopTracking(), []);
 
   return (
     <div className="min-h-screen bg-black px-4 py-6">
-      <Link to={`/course/${courseId}`} className="text-indigo-400 mb-4 inline-block">
+      <Link
+        to={`/course/${courseId}`}
+        className="text-indigo-400 mb-4 inline-block"
+      >
         ← Back
       </Link>
 
       {error && <div className="text-red-400 mb-3">{error}</div>}
 
       <video
-  ref={videoRef}
-  controls
-  playsInline
-  onPlay={startTracking}
-  onPause={stopTracking}
-  onEnded={() => {
-    const video = videoRef.current;
-    if (video) {
-      fetch(`${API_BASE}/api/courses/${courseId}/videos/progress/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`,
-        },
-        body: JSON.stringify({
-          video_id: videoId,
-          current_time: Math.floor(video.duration),
-        }),
-      });
-    }
-    stopTracking();
-  }}
-/>
+        ref={videoRef}
+        controls
+        playsInline
+        onPlay={startTracking}
+        onPause={stopTracking}
+        onEnded={stopTracking}
+        className="w-full max-h-[80vh]"
+      />
     </div>
   );
 }

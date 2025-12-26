@@ -11,11 +11,16 @@ function Login() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,7 +31,13 @@ function Login() {
       await login(formData.email, formData.password);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.error || "Login failed");
+      // Axios-safe error handling
+      const message =
+        err?.response?.data?.error ||
+        err?.response?.data?.detail ||
+        "Invalid email or password";
+
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -34,20 +45,20 @@ function Login() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-100 px-6 py-10">
-
-      {/* 🔥 PAGE HEADING */}
+      
+      {/* PAGE HEADING */}
       <h1 className="text-3xl md:text-4xl font-extrabold text-center text-indigo-700 mb-6">
         Bekola Internship Portal – Login
       </h1>
 
       <div className="max-w-5xl w-full bg-white shadow-xl rounded-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2">
 
-        {/* LEFT SIDE BANNER */}
+        {/* LEFT BANNER */}
         <div className="hidden md:flex flex-col justify-center bg-indigo-600 text-white p-10">
           <h2 className="text-4xl font-bold mb-4">Welcome Back</h2>
           <p className="text-lg text-indigo-100 leading-relaxed">
-            Access your dashboard, manage your projects, explore internships,
-            and continue your learning journey with Bekola.
+            Access your dashboard, manage projects, explore internships,
+            and continue learning with Bekola.
           </p>
 
           <div className="mt-8 space-y-3 text-indigo-100">
@@ -58,7 +69,7 @@ function Login() {
           </div>
         </div>
 
-        {/* RIGHT SIDE FORM */}
+        {/* RIGHT FORM */}
         <div className="p-10">
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-2">
             Sign in to your Account

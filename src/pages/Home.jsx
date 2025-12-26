@@ -1,5 +1,5 @@
 // src/pages/Home.jsx
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import CountUp from "react-countup";
 import { FaWhatsapp } from "react-icons/fa";
@@ -13,69 +13,45 @@ import "swiper/css";
 import "swiper/css/effect-fade";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
-import { useNavigate } from "react-router-dom";
+import "./Home.css";   // 👈 THIS links the CSS
+
+
 import { useAuth } from "../contexts/AuthContext";
+import loadingImg from "../assets/loading.png";
 
-
-
-/**
- * Premium Home - Corporate / Clean layout
- * - Hero slider (keeps your chosen images)
- * - Mission slider (teamwork / collaboration images from Pexels — Option A2)
- * - Counters (CountUp animated when visible)
- * - Services (smooth scroll target)
- * - Partners marquee
- * - Grow With Us form (name, phone, email)
- * - Testimonials carousel
- * - Floating WhatsApp button
- *
- * Replace image URLs with your own Pexels / asset URLs when ready.
- */
+/* ----------------------------------
+   Image preloader (NECESSARY)
+---------------------------------- */
+const preloadImages = (urls = []) =>
+  Promise.all(
+    urls.map(
+      (src) =>
+        new Promise((resolve) => {
+          const img = new Image();
+          img.src = src;
+          img.onload = resolve;
+          img.onerror = resolve;
+        })
+    )
+  );
 
 function Home() {
-    
-const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [form, setForm] = useState({ name: "", phone: "", email: "" });
   const [isDark, setIsDark] = useState(false);
-  const { ref: counterRef, inView } = useInView({ triggerOnce: true, threshold: 0.25 });
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(true);
 
+  const { ref: counterRef, inView } = useInView({
+    triggerOnce: true,
+    threshold: 0.25,
+  });
 
-  
-
-const { user } = useAuth();
-
-const handleApply = () => {
-  if (user) {
-    navigate("/dashboard");
-  } else {
-    navigate("/auth/signup");
-  }
-};
-
-
-
-  useEffect(() => {
-    // defer any client-only logic
-    setMounted(true);
-  }, []);
-
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // TODO: send to backend API
-    alert("Thanks — our team will contact you shortly.");
-    setForm({ name: "", phone: "", email: "" });
-  };
-
-  const pageBg = isDark ? "bg-slate-900 text-gray-50" : "bg-white text-gray-900";
-  const cardBg = isDark ? "bg-slate-800" : "bg-white";
-  const mutedText = isDark ? "text-gray-300" : "text-gray-600";
-  const borderColor = isDark ? "border-slate-700" : "border-slate-200";
-
-  // Hero slides (kept as you had — high-quality Pexels images)
+  /* ----------------------------------
+     SLIDES DATA (unchanged)
+  ---------------------------------- */
   const heroSlides = [
     {
       title: "Digital Core for Modern Enterprises",
@@ -104,24 +80,97 @@ const handleApply = () => {
     },
   ];
 
-  // Mission slides — Option A2: Teamwork / Collaboration images (different from hero)
   const missionSlides = [
     {
       title: "Building an Industry-Ready Workforce",
       sub: "Bridging academia and real corporate engineering with hands-on projects.",
-      img: "https://images.pexels.com/photos/3183186/pexels-photo-3183186.jpeg", // teamwork image
+      img: "https://images.pexels.com/photos/3183186/pexels-photo-3183186.jpeg",
     },
     {
       title: "Cross-functional Collaboration",
       sub: "We embed students into product teams and teach real-world collaboration.",
-      img: "https://images.pexels.com/photos/3182763/pexels-photo-3182763.jpeg", // teamwork image
+      img: "https://images.pexels.com/photos/3182763/pexels-photo-3182763.jpeg",
     },
     {
       title: "Mentorship & Real Deliverables",
       sub: "Mentored internships, code reviews, and production-like delivery cycles.",
-      img: "https://images.pexels.com/photos/3182826/pexels-photo-3182826.jpeg", // teamwork image
+      img: "https://images.pexels.com/photos/3182826/pexels-photo-3182826.jpeg",
     },
   ];
+
+  const testimonialImages = [
+    "https://images.pexels.com/photos/3184325/pexels-photo-3184325.jpeg",
+    "https://images.pexels.com/photos/3183174/pexels-photo-3183174.jpeg",
+    "https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg",
+  ];
+  const [showText, setShowText] = useState(false);
+
+
+  /* ----------------------------------
+     LOAD EVERYTHING FIRST
+  ---------------------------------- */
+  useEffect(() => {
+  const loadAll = async () => {
+    const allImages = [
+      ...heroSlides.map((s) => s.img),
+      ...missionSlides.map((m) => m.img),
+      ...testimonialImages,
+    ];
+
+    // 1st second → logo only
+    setTimeout(() => setShowText(true), 1000);
+
+    // Minimum 2 seconds loader + image preload
+    await Promise.all([
+      preloadImages(allImages),
+      new Promise((resolve) => setTimeout(resolve, 2000)),
+    ]);
+
+    setMounted(true);
+    setLoading(false);
+  };
+
+  loadAll();
+}, []);
+
+
+  /* ----------------------------------
+     LOADING SCREEN
+  ---------------------------------- */
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white">
+        <img
+          src={loadingImg}
+          alt="Loading"
+          className="w-40 md:w-56 animate-pulse"
+        />
+        <p className="mt-6 text-gray-500 text-sm tracking-wide">
+          {/* Loading experience... */}
+        </p>
+      </div>
+    );
+  }
+
+  /* ----------------------------------
+     HANDLERS
+  ---------------------------------- */
+  const handleApply = () =>
+    user ? navigate("/dashboard") : navigate("/auth/signup");
+
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    alert("Thanks — our team will contact you shortly.");
+    setForm({ name: "", phone: "", email: "" });
+  };
+
+  const pageBg = isDark ? "bg-slate-900 text-gray-50" : "bg-white text-gray-900";
+  const cardBg = isDark ? "bg-slate-800" : "bg-white";
+  const mutedText = isDark ? "text-gray-300" : "text-gray-600";
+  const borderColor = isDark ? "border-slate-700" : "border-slate-200";
 
   return (
     <div className={`${pageBg} min-h-screen font-sans`}>
@@ -159,8 +208,8 @@ const handleApply = () => {
                 <div className="h-full w-full bg-gradient-to-r from-black/60 via-black/20 to-transparent flex items-center">
                   <div className="max-w-6xl mx-auto px-6 lg:px-12">
                     <div className="max-w-xl">
-                      <p className="text-sm uppercase tracking-widest mb-3 text-indigo-300">
-                        Bekola Technical Solutions
+                      <p className="text-sm uppercase tracking-widest mb-3 text-white-300" style={{color:"grey"}}>
+                        Nexston Corporations Pvt Ltd
                       </p>
                       <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-4 leading-tight">
                         {s.title}
@@ -196,7 +245,7 @@ const handleApply = () => {
       {/* NEWS / MARQUEE */}
       <section className={`border-y ${borderColor} ${isDark ? "bg-slate-800" : "bg-gray-50"}`}>
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
-          <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600">Latest at Bekola</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600">Latest at Nexston</span>
           <div className="overflow-hidden flex-1">
             <div className="animate-marquee whitespace-nowrap flex gap-10 text-sm text-gray-700">
               <span>🚀 Launch: AI-enabled internship projects — 2025 batch.</span>
@@ -230,7 +279,8 @@ const handleApply = () => {
 
       {/* MISSION SLIDER (Teamwork / Collaboration) */}
       <section className="max-w-6xl mx-auto px-4 md:px-6 py-10">
-        <h2 className="text-3xl md:text-4xl font-bold mb-6 text-center">Our Mission & Approach</h2>
+        <h2 className="mission text-3xl md:text-4xl font-bold mb-6 text-center">Our Mission & Approach</h2>
+        {/* <h2 className="hai">hai</h2> */}
 
         <div className="relative w-full h-[60vh] md:h-[56vh] rounded-xl overflow-hidden shadow-lg">
           <Swiper
@@ -295,7 +345,7 @@ const handleApply = () => {
           <h3 className="text-2xl font-semibold mb-6">Trusted Collaborations</h3>
           <div className="overflow-hidden">
             <div className="animate-marquee whitespace-nowrap flex gap-16 justify-center items-center text-lg font-medium">
-              <span>Global Tech Academy</span>
+              <span>Kerala Startup Mission</span>
               <span>Dubai Smart Systems</span>
               <span>Kerala Skills Hub</span>
               <span>AI Research Labs</span>
@@ -369,7 +419,7 @@ const handleApply = () => {
 
     {[
       {
-        text: "We engaged Bekola to build our MVP. The team delivered with great quality and communication.",
+        text: "We engaged Nexston to build our MVP. The team delivered with great quality and communication.",
         author: "Startup Founder — Dubai",
         img: "https://images.pexels.com/photos/3184325/pexels-photo-3184325.jpeg"
       },
@@ -379,7 +429,7 @@ const handleApply = () => {
         img: "https://images.pexels.com/photos/3183174/pexels-photo-3183174.jpeg"
       },
       {
-        text: "Bekola’s internship simulated real corporate delivery — I shipped production features and learned code reviews.",
+        text: "Nexston’s internship simulated real corporate delivery — I shipped production features and learned code reviews.",
         author: "Rohan — Full-Stack Intern",
         img: "https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg"
       }
@@ -436,14 +486,92 @@ const handleApply = () => {
       </a>
 
       {/* Footer */}
-      <footer className="text-center py-6 bg-slate-900 text-gray-300">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row md:justify-between items-center gap-4">
-            <div>© {new Date().getFullYear()} Bekola Technical Solutions</div>
-            <div className="text-sm text-gray-400">Designed for enterprise internships & skilling</div>
-          </div>
+<footer className="bg-slate-900 text-gray-300">
+  <div className="max-w-7xl mx-auto px-6 py-10">
+    
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+
+      {/* Company Info */}
+      <div>
+        <h4 className="text-lg font-semibold text-white mb-3">
+          Nexston Corporations Pvt Ltd
+        </h4>
+        <p className="text-sm text-gray-400 leading-relaxed">
+          Enterprise technology solutions, digital engineering, and
+          industry-ready skilling programs.
+        </p>
+      </div>
+
+      {/* Address */}
+      <div>
+        <h4 className="text-lg font-semibold text-white mb-3">
+          Corporate Office
+        </h4>
+        <p className="text-sm text-gray-400 leading-relaxed">
+          Kochi, Kerala, India <br />
+          Email: <a href="mailto:info@nexston.in" className="hover:text-white">info@nexston.in</a> <br />
+          Phone: <a href="tel:+918921271340" className="hover:text-white">+91 89212 71340</a>
+        </p>
+      </div>
+
+      {/* Social Links */}
+      <div>
+        <h4 className="text-lg font-semibold text-white mb-3">
+          Connect With Us
+        </h4>
+
+        <div className="flex items-center gap-5 text-xl">
+          <a
+            href="https://www.instagram.com/"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-pink-500 transition"
+            aria-label="Instagram"
+          >
+            <i className="fab fa-instagram" />
+          </a>
+
+          <a
+            href="https://www.facebook.com/"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-blue-500 transition"
+            aria-label="Facebook"
+          >
+            <i className="fab fa-facebook-f" />
+          </a>
+
+          <a
+            href="https://x.com/"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-white transition"
+            aria-label="X"
+          >
+            <i className="fab fa-x-twitter" />
+          </a>
+
+          <a
+            href="https://www.linkedin.com/"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-blue-400 transition"
+            aria-label="LinkedIn"
+          >
+            <i className="fab fa-linkedin-in" />
+          </a>
         </div>
-      </footer>
+      </div>
+
+    </div>
+
+    {/* Bottom Bar */}
+    <div className="border-t border-slate-700 mt-8 pt-6 text-center text-sm text-gray-400">
+      © {new Date().getFullYear()} Nexston Corporations Pvt Ltd. All rights reserved.
+    </div>
+
+  </div>
+</footer>
     </div>
   );
 }

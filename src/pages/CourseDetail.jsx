@@ -18,6 +18,8 @@ function formatDescription(text) {
 export default function CourseDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   const [course, setCourse] = useState(null);
   const [modules, setModules] = useState([]);
@@ -205,23 +207,28 @@ export default function CourseDetail() {
   };
 
   const submitGithubLink = async () => {
-    if (savedGithubLink) return;
+  if (savedGithubLink || isSubmitting) return;
 
-    if (!githubLink.trim()) {
-      alert("Github link is required");
-      return;
-    }
+  if (!githubLink.trim()) {
+    alert("Github link is required");
+    return;
+  }
 
-    try {
-      await api.post(`/certificate/github-link/${id}/`, {
-        github_link: githubLink.trim(),
-      });
-      setSavedGithubLink(githubLink.trim());
-      setGithubLink("");
-    } catch {
-      alert("Failed to submit Github link");
-    }
-  };
+  try {
+    setIsSubmitting(true); // 🔒 lock button
+
+    await api.post(`/certificate/github-link/${id}/`, {
+      github_link: githubLink.trim(),
+    });
+
+    setSavedGithubLink(githubLink.trim());
+    setGithubLink("");
+  } catch (err) {
+    alert("Failed to submit Github link");
+  } finally {
+    setIsSubmitting(false); // 🔓 unlock only after response
+  }
+};
 
   // ------------------------------
   // ATTACHMENTS
@@ -416,19 +423,34 @@ export default function CourseDetail() {
           {openGithub && githubUnlocked && (
             <div className="mt-3">
               <input
-                value={savedGithubLink || githubLink}
-                onChange={(e) => setGithubLink(e.target.value)}
-                disabled={courseCompleted}
-                className="w-full border p-2 rounded mb-2"
-              />
+  value={savedGithubLink || githubLink}
+  onChange={(e) => setGithubLink(e.target.value)}
+  disabled={courseCompleted || isSubmitting}
+  className="w-full border p-2 rounded mb-2"
+/>
 
               <button
-                onClick={submitGithubLink}
-                disabled={courseCompleted}
-                className="px-4 py-2 rounded text-white bg-indigo-600"
-              >
-                {courseCompleted ? "Submitted ✔" : "Submit Github Link"}
-              </button>
+  onClick={submitGithubLink}
+  disabled={courseCompleted || isSubmitting}
+  className={`px-4 py-2 rounded text-white flex items-center justify-center gap-2
+    ${courseCompleted
+      ? "bg-green-600"
+      : isSubmitting
+      ? "bg-indigo-400 cursor-not-allowed"
+      : "bg-indigo-600 hover:bg-indigo-700"
+    }`}
+>
+  {courseCompleted ? (
+    "Submitted ✔"
+  ) : isSubmitting ? (
+    <>
+      <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+      Submitting...
+    </>
+  ) : (
+    "Submit Github Link"
+  )}
+</button>
             </div>
           )}
         </div>
