@@ -17,6 +17,9 @@ import TestPage from "./pages/TestPage";
 import TestHistoryPage from "./pages/TestHistoryPage";
 import MyCertificates from "./pages/MyCertificates";
 import CertificateVerify from "./pages/CertificateVerify";
+import Announcements from "./pages/Announcements";
+import StudentProfile from "./pages/StudentProfile";
+import Bills from "./pages/Bills";
 
 // ===============================
 // Private Route Wrapper
@@ -46,7 +49,7 @@ function App() {
         <Navbar />
 
         {/* MAIN CONTENT */}
-        <main className="pt-16 min-h-[calc(100vh-4rem)] bg-gray-50 overflow-y-auto">
+<main className="pt-0 min-h-screen bg-gray-50 overflow-y-auto">
           <Routes>
             {/* Public */}
             <Route path="/" element={<Home />} />
@@ -129,6 +132,12 @@ function App() {
             />
 
             <Route path="/verify-certificate" element={<CertificateVerify />} />
+            <Route path="/announcements" element={<Announcements />} />
+            <Route path="/profile" element={<StudentProfile />} />
+            <Route path="/bills" element={<Bills />} />
+
+
+
 
 
             {/* Fallback */}

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import TreeView from "../components/TreeView";
+import "./CourseDetail.css"
+import loadingImg from "../assets/loading.png";
 
 // ------------------------------
 // Format description
@@ -35,7 +37,22 @@ export default function CourseDetail() {
   const [githubLink, setGithubLink] = useState("");
   const [savedGithubLink, setSavedGithubLink] = useState(null);
   const [moduleProgress, setModuleProgress] = useState([]);
+const [modulesLoading, setModulesLoading] = useState(false);
+const [pendingRequests, setPendingRequests] = useState(0);
 
+
+
+
+
+const fetchContents = async () => {
+  try {
+    setModulesLoading(true);
+    const res = await api.get(`/courses/${id}/modules/`);
+    setModules(res.data);
+  } finally {
+    setModulesLoading(false);
+  }
+};
   // ------------------------------
   // Load module progress
   // ------------------------------
@@ -256,8 +273,17 @@ export default function CourseDetail() {
     navigate(`/courses/${id}/tests/${testId}`);
   };
 
-  if (loading) return <div className="p-10 text-center">Loading…</div>;
-
+if (loading || (course?.is_enrolled && modulesLoading)) {
+  return (
+    <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
+      <img
+        src={loadingImg}
+        alt="Loading"
+        className="w-48 opacity-90 animate-pulse"
+      />
+    </div>
+  );
+}
   // ------------------------------
   // RULES
   // ------------------------------
@@ -274,202 +300,243 @@ export default function CourseDetail() {
   // UI
   // ------------------------------
   return (
-    <div className="min-h-screen bg-gray-50 px-6 py-10">
-      <div className="max-w-7xl mx-auto space-y-8">
+  <div className="min-h-screen bg-slate-50 py-10">
+    <div className="max-w-7xl mx-auto px-6 space-y-10">
 
-        {/* HEADER */}
-        <div className="bg-white border rounded-2xl p-8">
-          <h1 className="text-4xl font-bold">{course.title}</h1>
+      {/* ================= HERO ================= */}
+      <div className="bg-white border rounded-2xl shadow-sm p-8 flex flex-col lg:flex-row justify-between gap-8">
+
+        <div className="space-y-4 max-w-3xl">
+          <h1 className="text-4xl font-bold text-slate-900">
+            {course.title}
+          </h1>
 
           <div
+            className="prose prose-slate max-w-none"
             dangerouslySetInnerHTML={{
               __html: formatDescription(course.description),
             }}
           />
-
-          <div className="flex justify-between items-center mt-6">
-            <div className="text-2xl font-bold text-indigo-600">
-              ₹{course.price}
-            </div>
-
-            <div className="flex gap-3 items-center">
-              {course.is_enrolled && (
-                <Link
-                  to={`/courses/${id}/tests/history`}
-                  className="text-sm underline text-blue-600"
-                >
-                  View Test History →
-                </Link>
-              )}
-
-              {course.is_enrolled ? (
-                <span className="px-4 py-2 bg-green-100 text-green-700 rounded-full">
-                  ✓ Enrolled
-                </span>
-              ) : (
-                <button
-                  onClick={handleEnrollNow}
-                  className="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                >
-                  Enroll Now →
-                </button>
-              )}
-            </div>
-          </div>
         </div>
 
-        {/* MODULES */}
-        {course.is_enrolled && (
-          <div className="bg-white border rounded-2xl p-8">
-            <h2 className="text-2xl font-bold mb-5">Course Content</h2>
-
-            {modules.map((item) => (
-              <div key={item.id} className="border rounded-xl p-4 mb-4">
-                <div
-                  className={`flex justify-between ${
-                    !item.is_unlocked
-                      ? "opacity-50  cursor-not-allowed"
-                      : "cursor-pointer"
-                  }`}
-                  onClick={() =>
-                    toggleModule(item.id, item.is_unlocked)
-                  }
-                >
-                  <h3 className="font-semibold">
-                    {item.item_type === "video" ? "🎬" : "📝"} {item.title}
-                  </h3>
-                  <span>
-                    {!item.is_unlocked
-                      ? "🔒"
-                      : openModuleId === item.id
-                      ? "▲"
-                      : "▼"}
-                  </span>
-                </div>
-
-                {openModuleId === item.id && item.is_unlocked && (
-                  <div className="mt-4 pl-4 border-l">
-                    {item.item_type === "video" ? (
-                      <>
-                        <Link to={`/courses/${id}/video/${item.item_id}`}>
-                          <img
-                            src={item.thumbnail || "/default-thumb.png"}
-                            className="w-40 h-24 rounded border"
-                          />
-                        </Link>
-
-                        {item.attachment_url && (
-                          <button
-                            onClick={() =>
-                              loadAttachmentTree(item.item_id)
-                            }
-                            className="mt-2 bg-gray-200 px-3 py-1 rounded"
-                          >
-                            📂 View Code Files
-                          </button>
-                        )}
-
-                        {tree && (
-                          <TreeView
-                            tree={tree}
-                            onSelect={(fp) =>
-                              loadFileContent(item.item_id, fp)
-                            }
-                          />
-                        )}
-
-                        {fileContent && (
-                          <pre className="bg-black text-green-400 p-4 mt-3 rounded">
-                            {fileContent}
-                          </pre>
-                        )}
-                      </>
-                    ) : (
-                      <button
-                        disabled={attemptedTests[item.item_id]}
-                        onClick={() =>
-                          handleStartTest(item.item_id)
-                        }
-                        className={`px-4 py-2 rounded-md mt-4 text-white ${
-                          attemptedTests[item.item_id]
-                            ? "bg-gray-400"
-                            : "bg-green-600 hover:bg-green-700"
-                        }`}
-                      >
-                        {attemptedTests[item.item_id]
-                          ? "Test Attempted ✔"
-                          : "Start Test →"}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* GITHUB */}
-        <div className={`border rounded-xl p-4 ${!githubUnlocked && "opacity-50"}`}>
-          <div
-            className="flex justify-between cursor-pointer"
-            onClick={() =>
-              githubUnlocked && setOpenGithub(!openGithub)
-            }
-          >
-            <h3 className="font-semibold">📦 Github Files</h3>
-            <span>{openGithub ? "▲" : "▼"}</span>
+        <div className="bg-slate-50 border rounded-xl p-6 w-full lg:w-80 flex flex-col justify-between">
+          <div>
+            <p className="text-sm text-slate-500 mb-1">Course Fee</p>
+            <p className="text-3xl font-bold text-indigo-600">
+              ₹{course.price}
+            </p>
           </div>
 
-          {openGithub && githubUnlocked && (
-            <div className="mt-3">
-              <input
-  value={savedGithubLink || githubLink}
-  onChange={(e) => setGithubLink(e.target.value)}
-  disabled={courseCompleted || isSubmitting}
-  className="w-full border p-2 rounded mb-2"
-/>
-
+          <div className="mt-6 space-y-3">
+            {course.is_enrolled ? (
+              <span className="block text-center bg-emerald-100 text-emerald-700 py-2 rounded-full font-medium">
+                ✓ Enrolled
+              </span>
+            ) : (
               <button
-  onClick={submitGithubLink}
-  disabled={courseCompleted || isSubmitting}
-  className={`px-4 py-2 rounded text-white flex items-center justify-center gap-2
-    ${courseCompleted
-      ? "bg-green-600"
-      : isSubmitting
-      ? "bg-indigo-400 cursor-not-allowed"
-      : "bg-indigo-600 hover:bg-indigo-700"
-    }`}
+                onClick={handleEnrollNow}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-medium"
+              >
+                Enroll Now
+              </button>
+            )}
+
+            {course.is_enrolled && (
+  <Link
+    to={`/courses/${id}/tests/history`}
+    className="block text-center border border-indigo-600 text-indigo-600
+               py-2.5 rounded-lg font-medium
+               hover:bg-indigo-50 transition"
+  >
+    View Test History
+  </Link>
+)}
+          </div>
+        </div>
+      </div>
+
+      {/* ================= COURSE CONTENT ================= */}
+      {course.is_enrolled && (
+        <div className="bg-white border rounded-2xl shadow-sm p-8">
+          <h2 className="text-2xl font-bold text-slate-900 mb-6">
+            Course Content
+          </h2>
+
+          <div className="space-y-4">
+            {modules.map((item) => (
+              <div
+  className={`module-item p-4 ${
+    item.is_unlocked ? "" : "module-locked"
+  }`}
+  onClick={() =>
+    toggleModule(item.id, item.is_unlocked)
+  }
 >
-  {courseCompleted ? (
-    "Submitted ✔"
-  ) : isSubmitting ? (
-    <>
-      <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-      Submitting...
-    </>
-  ) : (
-    "Submit Github Link"
-  )}
-</button>
+  {/* ---------- Header ---------- */}
+  <div className="flex justify-between items-center">
+    <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+      <span>
+        {item.item_type === "video" ? "🎬" : "📝"}
+      </span>
+      {item.title}
+    </h3>
+
+    <span className="text-slate-500">
+      {!item.is_unlocked
+        ? "🔒"
+        : openModuleId === item.id
+        ? "▲"
+        : "▼"}
+    </span>
+  </div>
+
+  {/* ---------- Expanded Content ---------- */}
+  {openModuleId === item.id && item.is_unlocked && (
+    <div
+      className="mt-4 pl-4 border-l border-slate-200 space-y-4"
+      onClick={(e) => e.stopPropagation()} // 🔒 prevent collapse
+    >
+      {item.item_type === "video" ? (
+        <>
+          {/* ---------- Video Thumbnail ---------- */}
+          <Link
+            to={`/courses/${id}/video/${item.item_id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-block"
+          >
+            <img
+              src={item.thumbnail || "/default-thumb.png"}
+              alt="Video thumbnail"
+              className="w-48 rounded-lg border hover:shadow-md transition"
+            />
+          </Link>
+          <br />
+
+          {/* ---------- Attachments ---------- */}
+          {item.attachment_url && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                loadAttachmentTree(item.item_id);
+              }}
+              className="text-sm font-medium text-indigo-600 hover:text-indigo-800 underline"
+            >
+              View Code Files
+            </button>
+          )}
+
+          {/* ---------- Tree View ---------- */}
+          {tree && (
+            <div>
+              <TreeView
+                tree={tree}
+                onSelect={(fp) =>
+                  loadFileContent(item.item_id, fp)
+                }
+              />
             </div>
           )}
-        </div>
 
-        {/* COMPLETED */}
-        {courseCompleted && (
-          <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-            <h3 className="text-xl font-bold text-green-700 mb-2">
-              🎉 Course Completed Successfully!
-            </h3>
-            <Link
-              to="/my-certificates"
-              className="inline-block bg-green-600 text-white px-4 py-2 rounded"
-            >
-              View My Certificates
-            </Link>
-          </div>
-        )}
-      </div>
+          {/* ---------- Code Viewer ---------- */}
+          {fileContent && (
+            <pre className="code-viewer p-4 overflow-auto">
+              {fileContent}
+            </pre>
+          )}
+        </>
+      ) : (
+        /* ---------- Test Button ---------- */
+        <button
+          disabled={attemptedTests[item.item_id]}
+          onClick={() =>
+            handleStartTest(item.item_id)
+          }
+          className={`px-5 py-2 rounded-lg text-white font-medium transition ${
+            attemptedTests[item.item_id]
+              ? "bg-slate-400 cursor-not-allowed"
+              : "bg-emerald-600 hover:bg-emerald-700"
+          }`}
+        >
+          {attemptedTests[item.item_id]
+            ? "Test Attempted"
+            : "Start Test"}
+        </button>
+      )}
     </div>
-  );
+  )}
+</div>
+
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ================= GITHUB SUBMISSION ================= */}
+      <div
+  className={`border rounded-2xl shadow-sm p-6 transition ${
+    githubUnlocked
+      ? "bg-white"
+      : "bg-slate-100 opacity-80"
+  }`}
+>
+  <div className="flex items-center justify-between mb-3">
+    <h3 className="text-xl font-semibold">
+      Github Project Submission
+    </h3>
+
+    {!githubUnlocked && (
+      <span className="text-lg" title="Complete all modules to unlock">
+        🔒
+      </span>
+    )}
+  </div>
+
+  {!githubUnlocked ? (
+    /* 🔒 LOCKED STATE */
+    <div className="text-sm text-slate-500 flex items-center gap-2">
+      <span>Complete all course modules to unlock submission</span>
+    </div>
+  ) : (
+    /* 🔓 UNLOCKED STATE */
+    <>
+      <input
+        value={savedGithubLink || githubLink}
+        onChange={(e) => setGithubLink(e.target.value)}
+        disabled={courseCompleted}
+        className="w-full border rounded-lg p-3 mb-3"
+        placeholder="Paste your Github repository link"
+      />
+
+      <button
+        onClick={submitGithubLink}
+        disabled={courseCompleted || isSubmitting}
+        className={`px-6 py-3 rounded-lg text-white font-medium ${
+          courseCompleted
+            ? "bg-emerald-600"
+            : "bg-indigo-600 hover:bg-indigo-700"
+        }`}
+      >
+        {courseCompleted ? "Submitted ✔" : "Submit Github Link"}
+      </button>
+    </>
+  )}
+</div>
+      {/* ================= COMPLETION ================= */}
+      {courseCompleted && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 text-center">
+          <h3 className="text-2xl font-bold text-emerald-700 mb-3">
+            🎉 Course Completed Successfully
+          </h3>
+          <Link
+            to="/my-certificates"
+            className="inline-block bg-emerald-600 text-white px-6 py-3 rounded-lg font-medium"
+          >
+            View My Certificates
+          </Link>
+        </div>
+      )}
+
+    </div>
+  </div>
+);
 }

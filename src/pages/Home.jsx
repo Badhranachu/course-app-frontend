@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import CountUp from "react-countup";
 import { FaWhatsapp } from "react-icons/fa";
-import { FiMoon, FiSun } from "react-icons/fi";
 import { useInView } from "react-intersection-observer";
 
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -39,10 +38,11 @@ function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [form, setForm] = useState({ name: "", phone: "", email: "" });
   const [isDark, setIsDark] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
 
   const { ref: counterRef, inView } = useInView({
     triggerOnce: true,
@@ -105,6 +105,59 @@ function Home() {
   ];
   const [showText, setShowText] = useState(false);
 
+  const handleApply = () =>
+    user ? navigate("/dashboard") : navigate("/auth/signup");
+
+
+  const pageBg = isDark ? "bg-slate-900 text-gray-50" : "bg-white text-gray-900";
+  const cardBg = isDark ? "bg-slate-800" : "bg-white";
+  const mutedText = isDark ? "text-gray-300" : "text-gray-600";
+  const borderColor = isDark ? "border-slate-700" : "border-slate-200";
+
+const [form, setForm] = useState({
+  full_name: "",
+  phone: "",
+  email: "",
+});
+
+const [message, setMessage] = useState("");
+
+const handleChange = (e) => {
+  setForm({
+    ...form,
+    [e.target.name]: e.target.value,
+  });
+};
+
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setSubmitting(true);
+  setMessage("");
+
+  try {
+    const res = await fetch("/api/grow-with-us/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        full_name: form.full_name.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim(),
+      }),
+    });
+
+    const data = await res.json();
+    setMessage(data.message);
+
+    if (res.ok) {
+      setForm({ full_name: "", phone: "", email: "" });
+    }
+  } catch {
+    setMessage("Something went wrong. Please try again.");
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
   /* ----------------------------------
      LOAD EVERYTHING FIRST
@@ -134,6 +187,9 @@ function Home() {
 }, []);
 
 
+
+
+
   /* ----------------------------------
      LOADING SCREEN
   ---------------------------------- */
@@ -155,26 +211,12 @@ function Home() {
   /* ----------------------------------
      HANDLERS
   ---------------------------------- */
-  const handleApply = () =>
-    user ? navigate("/dashboard") : navigate("/auth/signup");
+  
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    alert("Thanks — our team will contact you shortly.");
-    setForm({ name: "", phone: "", email: "" });
-  };
-
-  const pageBg = isDark ? "bg-slate-900 text-gray-50" : "bg-white text-gray-900";
-  const cardBg = isDark ? "bg-slate-800" : "bg-white";
-  const mutedText = isDark ? "text-gray-300" : "text-gray-600";
-  const borderColor = isDark ? "border-slate-700" : "border-slate-200";
 
   return (
     <div className={`${pageBg} min-h-screen font-sans`}>
-      {/* Theme toggle */}
+      {/* Theme toggle
       <button
         onClick={() => setIsDark((s) => !s)}
         className="fixed z-40 bottom-6 left-6 flex items-center gap-2 px-4 py-2 rounded-full shadow-lg bg-white/90 dark:bg-slate-800 dark:text-gray-100"
@@ -182,7 +224,7 @@ function Home() {
       >
         {isDark ? <FiSun /> : <FiMoon />}
         <span className="text-sm font-medium">{isDark ? "Light" : "Dark"}</span>
-      </button>
+      </button> */}
 
       {/* HERO SLIDER */}
       <header className="relative w-full h-[78vh] md:h-[82vh] overflow-hidden">
@@ -371,43 +413,58 @@ function Home() {
               </ul>
             </div>
 
-            <form onSubmit={handleSubmit} className="bg-indigo-50 p-6 rounded-xl shadow-sm">
-              <input
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="Full name"
-                required
-                className="w-full p-3 rounded-md mb-3 border"
-              />
-              <input
-                name="phone"
-                value={form.phone}
-                onChange={handleChange}
-                placeholder="Phone number"
-                required
-                className="w-full p-3 rounded-md mb-3 border"
-              />
-              <input
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="Email address"
-                type="email"
-                required
-                className="w-full p-3 rounded-md mb-4 border"
-              />
+            <form
+  onSubmit={handleSubmit}
+  className="bg-indigo-50 p-6 rounded-xl shadow-sm"
+>
+  <input
+    name="full_name"
+    value={form.full_name}
+    onChange={handleChange}
+    placeholder="Full name"
+    required
+    className="w-full p-3 rounded-md mb-3 border"
+  />
 
-              <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-md font-semibold">
-                Submit
-              </button>
-            </form>
+  <input
+    name="phone"
+    value={form.phone}
+    onChange={handleChange}
+    placeholder="Phone number"
+    required
+    className="w-full p-3 rounded-md mb-3 border"
+  />
+
+  <input
+    name="email"
+    value={form.email}
+    onChange={handleChange}
+    placeholder="Email address"
+    type="email"
+    required
+    className="w-full p-3 rounded-md mb-4 border"
+  />
+
+  <button
+  type="submit"
+  disabled={submitting}
+  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-md font-semibold disabled:opacity-50"
+>
+  {submitting ? "Submitting..." : "Submit"}
+</button>
+
+  {message && (
+    <p className="mt-3 text-sm text-center text-indigo-700">
+      {message}
+    </p>
+  )}
+</form>
           </div>
         </div>
       </section>
 
       {/* TESTIMONIALS */}
-      <section className="relative w-full h-[70vh] overflow-hidden my-20 rounded-xl shadow-xl">
+      {/* <section className="relative w-full h-[70vh] overflow-hidden my-20 rounded-xl shadow-xl">
   <Swiper
     modules={[Autoplay, Pagination, EffectFade]}
     autoplay={{ delay: 4000, disableOnInteraction: false }}
@@ -457,7 +514,7 @@ function Home() {
     ))}
 
   </Swiper>
-</section>
+</section> */}
 
 
       {/* INTERNSHIP CTA */}
@@ -475,16 +532,15 @@ function Home() {
       </section>
 
       {/* Floating WhatsApp */}
-      <a
-        href="https://wa.me/918921271340"
-        target="_blank"
-        rel="noreferrer"
-        className="fixed bottom-6 right-6 bg-green-500 text-white p-4 rounded-full shadow-xl text-2xl z-40"
-        aria-label="WhatsApp"
-      >
-        <FaWhatsapp />
-      </a>
-
+     <a
+  href="https://wa.me/8547182997?text=Hi%20%0AI%20am%20interested%20in%20your%20course%20/%20internship.%0ACould%20you%20please%20share%20more%20details?"
+  target="_blank"
+  rel="noreferrer"
+  className="fixed bottom-6 right-6 bg-green-500 text-white p-4 rounded-full shadow-xl text-2xl z-40"
+  aria-label="WhatsApp"
+>
+  <FaWhatsapp />
+</a>
       {/* Footer */}
 <footer className="bg-slate-900 text-gray-300">
   <div className="max-w-7xl mx-auto px-6 py-10">
@@ -521,6 +577,7 @@ function Home() {
         </h4>
 
         <div className="flex items-center gap-5 text-xl">
+
           <a
             href="https://www.instagram.com/"
             target="_blank"
@@ -528,7 +585,7 @@ function Home() {
             className="hover:text-pink-500 transition"
             aria-label="Instagram"
           >
-            <i className="fab fa-instagram" />
+<i className="fa-brands fa-instagram"></i>
           </a>
 
           <a
