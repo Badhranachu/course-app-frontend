@@ -28,7 +28,7 @@ export default function CourseDetail() {
   const [attemptedTests, setAttemptedTests] = useState({});
   const [loading, setLoading] = useState(true);
 
-  const [openModuleId, setOpenModuleId] = useState(null);
+    const [openModuleId, setOpenModuleId] = useState(null);
 
   const [tree, setTree] = useState(null);
   const [fileContent, setFileContent] = useState(null);
@@ -59,8 +59,26 @@ const fetchContents = async () => {
   useEffect(() => {
     if (course?.is_enrolled) {
       fetchModuleProgress();
+            fetchVideoProgress();
+
     }
   }, [course?.is_enrolled]);
+  // ------------------------------
+  // Progress calculation
+  // ------------------------------
+  const getProgressPercent = (module) => {
+    if (module.item_type !== "video") {
+      return module.is_completed ? 100 : 0;
+    }
+
+    const progress = videoProgress[module.video_id];
+    if (!progress || !progress.duration) return 0;
+
+    return Math.min(
+      Math.round((progress.watched_seconds / progress.duration) * 100),
+      100
+    );
+  };
 
   // ------------------------------
   // Load Razorpay script ONCE
@@ -139,6 +157,19 @@ const fetchContents = async () => {
       alert(err?.response?.data?.error || err.message || "Payment failed");
     }
   };
+
+  // ------------------------------
+  // Fetch video progress
+  // ------------------------------
+  const fetchVideoProgress = async () => {
+    const res = await api.get(`/courses/${id}/videos/progress/`);
+    const map = {};
+    res.data.forEach((v) => {
+      map[v.video_id] = v;
+    });
+    setVideoProgress(map);
+  };
+
 
   // ------------------------------
   // Module progress
@@ -273,8 +304,26 @@ const fetchContents = async () => {
     navigate(`/courses/${id}/tests/${testId}`);
   };
 
+
+  // ------------------------------
+// OVERALL COURSE PROGRESS
+// ------------------------------
+const totalModules = moduleProgress.length;
+
+const completedModules = moduleProgress.filter(
+  (m) => m.is_completed
+).length;
+
+const overallProgress =
+  totalModules > 0
+    ? Math.round((completedModules / totalModules) * 100)
+    : 0;
+
+
 if (loading || (course?.is_enrolled && modulesLoading)) {
   return (
+
+
     <div className="fixed inset-0 bg-white flex items-center justify-center z-50">
       <img
         src={loadingImg}
@@ -282,6 +331,8 @@ if (loading || (course?.is_enrolled && modulesLoading)) {
         className="w-48 opacity-90 animate-pulse"
       />
     </div>
+
+    
   );
 }
   // ------------------------------
@@ -307,6 +358,8 @@ if (loading || (course?.is_enrolled && modulesLoading)) {
       <div className="bg-white border rounded-2xl shadow-sm p-8 flex flex-col lg:flex-row justify-between gap-8">
 
         <div className="space-y-4 max-w-3xl">
+          
+
           <h1 className="text-4xl font-bold text-slate-900">
             {course.title}
           </h1>
@@ -354,122 +407,171 @@ if (loading || (course?.is_enrolled && modulesLoading)) {
           </div>
         </div>
       </div>
+      {/* ===== PREMIUM OVERALL COURSE PROGRESS ===== */}
+{course.is_enrolled && (
+  <div className="mt-6 rounded-xl border border-slate-200 bg-white/70 backdrop-blur-sm p-4 shadow-sm">
+
+    {/* Header */}
+    <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center gap-2">
+        <span className="inline-flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse" />
+        <span className="text-sm font-semibold text-slate-700">
+          Course Progress
+        </span>
+      </div>
+
+      <span className="text-sm font-bold text-slate-800">
+        {overallProgress}%
+      </span>
+    </div>
+
+    {/* Progress Track */}
+    <div className="relative h-3 w-full overflow-hidden rounded-full bg-gradient-to-r from-slate-200 to-slate-100 shadow-inner">
+
+      {/* Progress Fill */}
+      <div
+        className={`absolute left-0 top-0 h-full rounded-full transition-all duration-700 ease-out
+          ${
+            overallProgress === 100
+              ? "bg-gradient-to-r from-emerald-500 to-emerald-600"
+              : "bg-gradient-to-r from-indigo-500 via-indigo-600 to-indigo-700"
+          }
+        `}
+        style={{ width: `${overallProgress}%` }}
+      />
+
+      {/* Subtle Shine */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(110deg,transparent,rgba(255,255,255,0.35),transparent)] opacity-40" />
+    </div>
+
+    {/* Status */}
+    <div className="mt-2 flex items-center gap-2 text-xs">
+      {overallProgress === 100 ? (
+        <span className="inline-flex items-center gap-1 font-medium text-emerald-600">
+          ✔ Course completed
+        </span>
+      ) : (
+        <span className="text-slate-500">
+          Keep going — you're making great progress 🚀
+        </span>
+      )}
+    </div>
+
+  </div>
+)}
+
 
       {/* ================= COURSE CONTENT ================= */}
       {course.is_enrolled && (
-        <div className="bg-white border rounded-2xl shadow-sm p-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">
-            Course Content
-          </h2>
+  <div className="bg-white border rounded-2xl shadow-sm p-8">
+    <h2 className="text-2xl font-bold text-slate-900 mb-6">
+      Course Content
+    </h2>
 
-          <div className="space-y-4">
-            {modules.map((item) => (
-              <div
-  className={`module-item p-4 ${
-    item.is_unlocked ? "" : "module-locked"
-  }`}
-  onClick={() =>
-    toggleModule(item.id, item.is_unlocked)
-  }
->
-  {/* ---------- Header ---------- */}
-  <div className="flex justify-between items-center">
-    <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-      <span>
-        {item.item_type === "video" ? "🎬" : "📝"}
-      </span>
-      {item.title}
-    </h3>
+    <div className="space-y-4">
+      {moduleProgress.map((item) => (
+        <div
+          key={item.module_id}
+          className={`module-item p-4 ${
+            item.is_unlocked ? "" : "module-locked"
+          }`}
+          onClick={() =>
+            toggleModule(item.module_id, item.is_unlocked)
+          }
+        >
+          {/* ---------- Header ---------- */}
+          <div className="flex justify-between items-center">
+            <h3 className="font-semibold text-slate-800 flex items-center gap-2">
+              <span>
+                {item.item_type === "video" ? "🎬" : "📝"}
+              </span>
+              {item.title}
+            </h3>
 
-    <span className="text-slate-500">
-      {!item.is_unlocked
-        ? "🔒"
-        : openModuleId === item.id
-        ? "▲"
-        : "▼"}
-    </span>
-  </div>
+            <span className="text-slate-500">
+              {!item.is_unlocked
+                ? "🔒"
+                : openModuleId === item.module_id
+                ? "▲"
+                : "▼"}
+            </span>
+          </div>
 
-  {/* ---------- Expanded Content ---------- */}
-  {openModuleId === item.id && item.is_unlocked && (
-    <div
-      className="mt-4 pl-4 border-l border-slate-200 space-y-4"
-      onClick={(e) => e.stopPropagation()} // 🔒 prevent collapse
-    >
-      {item.item_type === "video" ? (
-        <>
-          {/* ---------- Video Thumbnail ---------- */}
-          <Link
-            to={`/courses/${id}/video/${item.item_id}`}
-            onClick={(e) => e.stopPropagation()}
-            className="inline-block"
-          >
-            <img
-              src={item.thumbnail || "/default-thumb.png"}
-              alt="Video thumbnail"
-              className="w-48 rounded-lg border hover:shadow-md transition"
-            />
-          </Link>
-          <br />
-
-          {/* ---------- Attachments ---------- */}
-          {item.attachment_url && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                loadAttachmentTree(item.item_id);
-              }}
-              className="text-sm font-medium text-indigo-600 hover:text-indigo-800 underline"
+          {/* ---------- Expanded Content ---------- */}
+          {openModuleId === item.module_id && item.is_unlocked && (
+            <div
+              className="mt-4 pl-4 border-l border-slate-200 space-y-4"
+              onClick={(e) => e.stopPropagation()}
             >
-              View Code Files
-            </button>
-          )}
+              {item.item_type === "video" ? (
+                <>
+                  {/* ---------- Video Thumbnail ---------- */}
+                  <Link
+                    to={`/courses/${id}/video/${item.video_id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-block"
+                  >
+                    <img
+  src={item.thumbnail || "/static/default-thumb.png"}
+  alt="Video thumbnail"
+  className="w-48 rounded-lg border hover:shadow-md transition"
+/>
 
-          {/* ---------- Tree View ---------- */}
-          {tree && (
-            <div>
-              <TreeView
-                tree={tree}
-                onSelect={(fp) =>
-                  loadFileContent(item.item_id, fp)
-                }
-              />
+                  </Link>
+
+                  {/* ---------- Attachments ---------- */}
+                  {item.attachment_url && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        loadAttachmentTree(item.video_id);
+                      }}
+                      className="text-sm font-medium text-indigo-600 hover:text-indigo-800 underline"
+                    >
+                      View Code Files
+                    </button>
+                  )}
+
+                  {/* ---------- Tree View ---------- */}
+                  {tree && (
+                    <TreeView
+                      tree={tree}
+                      onSelect={(fp) =>
+                        loadFileContent(item.video_id, fp)
+                      }
+                    />
+                  )}
+
+                  {/* ---------- Code Viewer ---------- */}
+                  {fileContent && (
+                    <pre className="code-viewer p-4 overflow-auto">
+                      {fileContent}
+                    </pre>
+                  )}
+                </>
+              ) : (
+                /* ---------- Test Button ---------- */
+                <button
+                  disabled={attemptedTests[item.test_id]}
+                  onClick={() => handleStartTest(item.test_id)}
+                  className={`px-5 py-2 rounded-lg text-white font-medium transition ${
+                    attemptedTests[item.test_id]
+                      ? "bg-slate-400 cursor-not-allowed"
+                      : "bg-emerald-600 hover:bg-emerald-700"
+                  }`}
+                >
+                  {attemptedTests[item.test_id]
+                    ? "Test Attempted"
+                    : "Start Test"}
+                </button>
+              )}
             </div>
           )}
-
-          {/* ---------- Code Viewer ---------- */}
-          {fileContent && (
-            <pre className="code-viewer p-4 overflow-auto">
-              {fileContent}
-            </pre>
-          )}
-        </>
-      ) : (
-        /* ---------- Test Button ---------- */
-        <button
-          disabled={attemptedTests[item.item_id]}
-          onClick={() =>
-            handleStartTest(item.item_id)
-          }
-          className={`px-5 py-2 rounded-lg text-white font-medium transition ${
-            attemptedTests[item.item_id]
-              ? "bg-slate-400 cursor-not-allowed"
-              : "bg-emerald-600 hover:bg-emerald-700"
-          }`}
-        >
-          {attemptedTests[item.item_id]
-            ? "Test Attempted"
-            : "Start Test"}
-        </button>
-      )}
-    </div>
-  )}
-</div>
-
-            ))}
-          </div>
         </div>
-      )}
+      ))}
+    </div>
+  </div>
+)}
 
       {/* ================= GITHUB SUBMISSION ================= */}
       <div
@@ -508,16 +610,40 @@ if (loading || (course?.is_enrolled && modulesLoading)) {
       />
 
       <button
-        onClick={submitGithubLink}
-        disabled={courseCompleted || isSubmitting}
-        className={`px-6 py-3 rounded-lg text-white font-medium ${
-          courseCompleted
-            ? "bg-emerald-600"
-            : "bg-indigo-600 hover:bg-indigo-700"
-        }`}
-      >
-        {courseCompleted ? "Submitted ✔" : "Submit Github Link"}
-      </button>
+  onClick={submitGithubLink}
+  disabled={courseCompleted || isSubmitting}
+  className={`relative px-6 py-3 rounded-lg text-white font-medium
+    flex items-center justify-center gap-2
+    transition-all duration-300
+    ${
+      courseCompleted
+        ? "bg-emerald-600"
+        : isSubmitting
+        ? "bg-indigo-500 cursor-not-allowed"
+        : "bg-indigo-600 hover:bg-indigo-700"
+    }`}
+>
+  {/* ⏳ Loading */}
+  {isSubmitting && !courseCompleted && (
+    <>
+      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+      <span>Submitting…</span>
+    </>
+  )}
+
+  {/* ✅ Success */}
+  {courseCompleted && (
+    <span className="flex items-center gap-2 animate-fade-in">
+      <span className="text-lg">✔</span>
+      Submitted
+    </span>
+  )}
+
+  {/* 🚀 Default */}
+  {!isSubmitting && !courseCompleted && (
+    <span>Submit Github Link</span>
+  )}
+</button>
     </>
   )}
 </div>
