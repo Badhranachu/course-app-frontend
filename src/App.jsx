@@ -20,6 +20,7 @@ import CertificateVerify from "./pages/CertificateVerify";
 import Announcements from "./pages/Announcements";
 import StudentProfile from "./pages/StudentProfile";
 import Bills from "./pages/Bills";
+import Support from "./pages/Support";
 
 // ===============================
 // Private Route Wrapper
@@ -135,6 +136,8 @@ function App() {
             <Route path="/announcements" element={<Announcements />} />
             <Route path="/profile" element={<StudentProfile />} />
             <Route path="/bills" element={<Bills />} />
+            <Route path="/support" element={<Support />} />
+
 
 
 

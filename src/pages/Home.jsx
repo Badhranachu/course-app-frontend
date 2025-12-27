@@ -560,15 +560,34 @@ const handleSubmit = async (e) => {
 
       {/* Address */}
       <div>
-        <h4 className="text-lg font-semibold text-white mb-3">
-          Corporate Office
-        </h4>
-        <p className="text-sm text-gray-400 leading-relaxed">
-          Kochi, Kerala, India <br />
-          Email: <a href="mailto:info@nexston.in" className="hover:text-white">info@nexston.in</a> <br />
-          Phone: <a href="tel:+918921271340" className="hover:text-white">+91 89212 71340</a>
-        </p>
-      </div>
+  <h4 className="text-lg font-semibold text-white mb-3">
+    Corporate Office
+  </h4>
+
+  <p className="text-sm text-gray-400 leading-relaxed">
+    No. 4/461, 2nd Floor, Suite #697,<br />
+    Valamkottil Towers, Judgemukku,<br />
+    Kakkanad, Kochi – 682021<br /><br />
+
+    Email:{" "}
+    <a
+      href="mailto:info@nexston.in"
+      className="hover:text-white"
+    >
+      info@nexston.in
+    </a>
+    <br />
+
+    Phone:{" "}
+    <a
+      href="tel:+9181299 19550"
+      className="hover:text-white"
+    >
+      +91 81299 19550
+    </a>
+  </p>
+</div>
+
 
       {/* Social Links */}
       <div>

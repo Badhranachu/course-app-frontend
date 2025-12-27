@@ -7,19 +7,16 @@ const api = axios.create({
   },
 });
 
-// 🔐 Attach DRF token (initial load)
-const token = localStorage.getItem("token");
-if (token) {
-  api.defaults.headers.common["Authorization"] = `Token ${token}`;
-}
-
-// 🔁 Always attach token before request
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Token ${token}`;
-  }
-  return config;
-});
+// ✅ ALWAYS attach token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("access_token"); // 🔥 FIX HERE
+    if (token) {
+      config.headers.Authorization = `Token ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
 export default api;

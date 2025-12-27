@@ -46,7 +46,7 @@ function Navbar() {
           <img
             src={bekolaLogo}
             alt="Bekola Logo"
-            className="h-14 w-auto object-contain"
+            className="h-16 w-auto object-contain"
           />
         </Link>
 
@@ -106,6 +106,9 @@ function Navbar() {
                     <DropdownLink to="/my-certificates" onClick={() => setProfileOpen(false)}>
                       🎓 My Certificates
                     </DropdownLink>
+                    <DropdownLink to="/support" onClick={() => setProfileOpen(false)}>
+                      🧑‍💻 Support
+                    </DropdownLink>
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
@@ -159,6 +162,9 @@ function Navbar() {
               </MobileLink>
               <MobileLink to="/my-certificates" onClick={() => setMenuOpen(false)}>
                 🎓 My Certificates
+              </MobileLink>
+              <MobileLink to="/support" onClick={() => setMenuOpen(false)}>
+                Support
               </MobileLink>
               <button
                 onClick={handleLogout}

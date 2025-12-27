@@ -40,7 +40,7 @@ function Signup() {
         email: formData.email,
       });
       setOtpSent(true);
-      setMessage("OTP sent to your email");
+      setMessage("OTP sented. Verify to unlock the remaining fields.");
     } catch (err) {
       setError(err.response?.data?.error || "Failed to send OTP");
     } finally {
