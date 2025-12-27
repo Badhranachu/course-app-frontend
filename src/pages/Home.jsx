@@ -17,6 +17,7 @@ import "./Home.css";   // 👈 THIS links the CSS
 
 import { useAuth } from "../contexts/AuthContext";
 import loadingImg from "../assets/loading.png";
+import AIChatWidget from "../components/AIChatWidget";
 
 /* ----------------------------------
    Image preloader (NECESSARY)
@@ -530,6 +531,8 @@ const handleSubmit = async (e) => {
 </button>
         </div>
       </section>
+      <AIChatWidget />
+
 
       {/* Floating WhatsApp */}
      <a
