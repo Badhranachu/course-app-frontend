@@ -4,6 +4,7 @@ import api from "../services/api";
 export default function MyCertificates() {
   const [certs, setCerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(null);
 
   useEffect(() => {
     api
@@ -11,6 +12,37 @@ export default function MyCertificates() {
       .then((res) => setCerts(res.data))
       .finally(() => setLoading(false));
   }, []);
+
+  // ✅ AUTHENTICATED DOWNLOAD (BLOB)
+  const downloadCertificate = async (url, filename) => {
+    try {
+      setDownloading(filename);
+
+      const res = await api.get(url, {
+        responseType: "blob", // 🔑 IMPORTANT
+      });
+
+      const blob = new Blob([res.data], {
+        type: "application/pdf",
+      });
+
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to download certificate");
+    } finally {
+      setDownloading(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -40,32 +72,46 @@ export default function MyCertificates() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {certs.map((c, index) => (
-            <div
-              key={index}
-              className="bg-white border rounded-xl shadow-sm p-5 flex flex-col justify-between"
-            >
-              {/* INFO */}
-              <div>
-                <h2 className="font-semibold text-gray-900 mb-2">
-                  {c.course_name}
-                </h2>
+          {certs.map((c, index) => {
+            const filename = `${c.course_name}-certificate.pdf`;
 
-                <p className="text-xs text-gray-500">
-                  Certificate of Completion
-                </p>
-              </div>
-
-              {/* ACTION */}
-              <a
-                href={c.certificate_url}
-                download
-                className="mt-4 inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition"
+            return (
+              <div
+                key={index}
+                className="bg-white border rounded-xl shadow-sm p-5 flex flex-col justify-between"
               >
-                ⬇ Download PDF
-              </a>
-            </div>
-          ))}
+                {/* INFO */}
+                <div>
+                  <h2 className="font-semibold text-gray-900 mb-2">
+                    {c.course_name}
+                  </h2>
+                  <p className="text-xs text-gray-500">
+                    Certificate of Completion
+                  </p>
+                </div>
+
+                {/* ACTION */}
+                <button
+                  onClick={() =>
+                    downloadCertificate(c.certificate_url, filename)
+                  }
+                  disabled={downloading === filename}
+                  className={`mt-4 inline-flex items-center justify-center gap-2
+                    text-white text-sm font-medium px-4 py-2 rounded-lg transition
+                    ${
+                      downloading === filename
+                        ? "bg-slate-400 cursor-not-allowed"
+                        : "bg-indigo-600 hover:bg-indigo-700"
+                    }
+                  `}
+                >
+                  {downloading === filename
+                    ? "Downloading…"
+                    : "⬇ Download PDF"}
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
