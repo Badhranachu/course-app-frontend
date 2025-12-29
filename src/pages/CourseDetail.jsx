@@ -4,6 +4,7 @@ import api from "../services/api";
 import TreeView from "../components/TreeView";
 import "./CourseDetail.css"
 import loadingImg from "../assets/loading.png";
+import defaultThumb from "../assets/default-thumb.png";
 
 // ------------------------------
 // Format description
@@ -512,10 +513,11 @@ if (loading || (course?.is_enrolled && modulesLoading)) {
                     className="inline-block"
                   >
                     <img
-  src={item.thumbnail || "/static/default-thumb.png"}
+  src={item.thumbnail || defaultThumb}
   alt="Video thumbnail"
   className="w-48 rounded-lg border hover:shadow-md transition"
 />
+
 
                   </Link>
 
