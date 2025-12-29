@@ -521,7 +521,7 @@ if (loading || (course?.is_enrolled && modulesLoading)) {
 
                   </Link>
 
-                  {/* ---------- Attachments ---------- */}
+                  {/* ---------- Attachments- ---------- */}
                   {item.attachment_url && (
                     <button
                       onClick={(e) => {
