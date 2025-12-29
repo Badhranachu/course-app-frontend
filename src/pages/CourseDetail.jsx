@@ -513,7 +513,7 @@ if (loading || (course?.is_enrolled && modulesLoading)) {
                     className="inline-block"
                   >
                     <img
-  src={item.thumbnail || defaultThumb}
+  src={defaultThumb}
   alt="Video thumbnail"
   className="w-48 rounded-lg border hover:shadow-md transition"
 />
