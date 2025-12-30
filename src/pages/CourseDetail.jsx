@@ -5,6 +5,7 @@ import TreeView from "../components/TreeView";
 import "./CourseDetail.css"
 import loadingImg from "../assets/loading.png";
 import defaultThumb from "../assets/default-thumb.png";
+import Swal from "sweetalert2";
 
 // ------------------------------
 // Format description
@@ -146,7 +147,12 @@ const fetchContents = async () => {
 
             await fetchCourse();
             await fetchModules();
-            alert("🎉 Enrollment successful");
+            await Swal.fire({
+                icon: "success",
+                title: "success",
+                text: "Enrollment succesfull",
+                confirmButtonText: "OK",
+              });
           } catch {
             alert("Payment verification failed");
           }

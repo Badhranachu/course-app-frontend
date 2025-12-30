@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { FiMail, FiUser, FiLock } from "react-icons/fi";
 import api from "../services/api";
+import Swal from "sweetalert2";
+
 
 function Signup() {
   const [formData, setFormData] = useState({
@@ -90,27 +92,42 @@ function Signup() {
     setLoading(true);
 
     try {
-      await signup(
-        formData.email,
-        formData.full_name,
-        formData.gender,
-        formData.password,
-        formData.password2
-      );
+  await signup(
+    formData.email,
+    formData.full_name,
+    formData.gender,
+    formData.password,
+    formData.password2
+  );
 
-      alert("Signup successful! Please login to continue.");
-      navigate("/auth/login");
-    } catch (err) {
-console.log("SIGNUP ERROR:", err.response?.data);
+  await Swal.fire({
+    icon: "success",
+    title: "Signup Successful",
+    text: "Please login to continue",
+    confirmButtonText: "OK",
+  });
 
-setError(
-  err.response?.data?.errors
+  navigate("/auth/login");
+
+} catch (err) {
+  const errorMsg = err.response?.data?.errors
     ? Object.values(err.response.data.errors).flat().join(", ")
-    : "Signup failed"
-);
-    } finally {
-      setLoading(false);
-    }
+    : "Signup failed";
+
+  Swal.fire({
+  toast: true,
+  position: "top-end",
+  icon: "success",
+  title: "Signup successful",
+  showConfirmButton: false,
+  timer: 3000,
+});
+
+
+} finally {
+  setLoading(false);
+}
+
   };
 
   return (
