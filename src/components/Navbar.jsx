@@ -163,6 +163,9 @@ function Navbar() {
               <MobileLink to="/my-certificates" onClick={() => setMenuOpen(false)}>
                 🎓 My Certificates
               </MobileLink>
+              <MobileLink to="/announcements" onClick={() => setMenuOpen(false)}>
+                Announcements
+              </MobileLink>
               <MobileLink to="/support" onClick={() => setMenuOpen(false)}>
                 Support
               </MobileLink>

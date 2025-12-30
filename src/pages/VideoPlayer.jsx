@@ -1,18 +1,42 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../services/api";
 
 export default function VideoPlayer() {
   const { courseId, videoId } = useParams();
+
   const videoRef = useRef(null);
   const lastSentRef = useRef(0);
+
   const [buffering, setBuffering] = useState(true);
+  const [videoUrl, setVideoUrl] = useState(null);
+  const [lastPosition, setLastPosition] = useState(0);
 
-  const API_BASE = import.meta.env.VITE_API_BASE;
-  const streamUrl =
-    `${API_BASE}/courses/${courseId}/videos/${videoId}/stream/`;
+  // ==============================
+  // 1️⃣ FETCH VIDEO URL
+  // ==============================
+  useEffect(() => {
+    api
+      .get(`/courses/${courseId}/videos/${videoId}/`)
+      .then(res => setVideoUrl(res.data.video_url));
+  }, [courseId, videoId]);
 
-  // 🔁 SEND PROGRESS (THROTTLED)
+  // ==============================
+  // 2️⃣ FETCH PROGRESS
+  // ==============================
+  useEffect(() => {
+    api
+      .get(`/courses/${courseId}/videos/${videoId}/progress/`)
+      .then(res => {
+        if (res.data.last_position) {
+          setLastPosition(res.data.last_position);
+        }
+      });
+  }, [courseId, videoId]);
+
+  // ==============================
+  // 3️⃣ SEND PROGRESS
+  // ==============================
   const sendProgress = (force = false) => {
     if (!videoRef.current) return;
 
@@ -21,57 +45,57 @@ export default function VideoPlayer() {
 
     lastSentRef.current = currentTime;
 
-    api.post(`/courses/${courseId}/videos/progress/`, {
-      video_id: parseInt(videoId),
+    api.post(`/courses/${courseId}/videos/${videoId}/progress/`, {
       current_time: currentTime,
     });
   };
 
+  // ==============================
+  // 4️⃣ RESUME
+  // ==============================
+  const handleLoadedMetadata = () => {
+    if (videoRef.current && lastPosition > 0) {
+      videoRef.current.currentTime = lastPosition;
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-white px-3 sm:px-6 lg:px-10 py-6">
-      
-      {/* Back */}
+    <div className="min-h-screen bg-white px-4 py-6">
       <Link
         to={`/course/${courseId}`}
-        className="mb-4 inline-block text-sm text-indigo-600 hover:underline"
+        className="mb-4 inline-block text-sm text-indigo-600"
       >
         ← Back
       </Link>
 
-      {/* Video Container */}
-      <div className="mx-auto mt-6 w-full max-w-6xl">
-        <div className="relative aspect-video w-full bg-black rounded-2xl shadow-2xl overflow-hidden">
+      <div className="mx-auto max-w-6xl w-full md:w-3/4">
 
-          {/* Buffering */}
+        <div className="relative aspect-video bg-black rounded-xl overflow-hidden scale-[0.75] origin-top mx-auto">
+
+
           {buffering && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/70">
-              <span className="text-white text-sm animate-pulse">
-                Loading video…
-              </span>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/70 text-white">
+              Loading…
             </div>
           )}
 
-          {/* Video */}
-          <video
-            ref={videoRef}
-            src={streamUrl}
-            controls
-            playsInline
-            preload="metadata"
-            onTimeUpdate={() => sendProgress(false)}
-            onPause={() => sendProgress(true)}
-            onEnded={() => {
-              if (!videoRef.current) return;
-              api.post(`/courses/${courseId}/videos/progress/`, {
-                video_id: parseInt(videoId),
-                current_time: Math.floor(videoRef.current.duration),
-              });
-            }}
-            onWaiting={() => setBuffering(true)}
-            onCanPlay={() => setBuffering(false)}
-            onPlaying={() => setBuffering(false)}
-            className="h-full w-full object-contain"
-          />
+          {videoUrl && (
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              controls
+              playsInline
+              preload="metadata"
+              onLoadedMetadata={handleLoadedMetadata}
+              onTimeUpdate={() => sendProgress(false)}
+              onPause={() => sendProgress(true)}
+              onEnded={() => sendProgress(true)}
+              onWaiting={() => setBuffering(true)}
+              onCanPlay={() => setBuffering(false)}
+              onPlaying={() => setBuffering(false)}
+              className="w-full h-full object-contain"
+            />
+          )}
         </div>
       </div>
     </div>

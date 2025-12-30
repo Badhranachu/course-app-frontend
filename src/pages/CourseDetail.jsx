@@ -31,7 +31,6 @@ export default function CourseDetail() {
 
     const [openModuleId, setOpenModuleId] = useState(null);
 
-  const [tree, setTree] = useState(null);
   const [fileContent, setFileContent] = useState(null);
 
   const [openGithub, setOpenGithub] = useState(false);
@@ -40,6 +39,20 @@ export default function CourseDetail() {
   const [moduleProgress, setModuleProgress] = useState([]);
 const [modulesLoading, setModulesLoading] = useState(false);
 const [pendingRequests, setPendingRequests] = useState(0);
+const [videoMeta, setVideoMeta] = useState({});
+const [videoProgress, setVideoProgress] = useState({});
+const [treeByVideo, setTreeByVideo] = useState({});
+const [attachmentLoading, setAttachmentLoading] = useState({});
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -54,6 +67,8 @@ const fetchContents = async () => {
     setModulesLoading(false);
   }
 };
+
+
   // ------------------------------
   // Load module progress
   // ------------------------------
@@ -163,7 +178,7 @@ const fetchContents = async () => {
   // Fetch video progress
   // ------------------------------
   const fetchVideoProgress = async () => {
-    const res = await api.get(`/courses/${id}/videos/progress/`);
+    const res = await api.get(`/courses/${id}/all-videos/progress/`);
     const map = {};
     res.data.forEach((v) => {
       map[v.video_id] = v;
@@ -190,7 +205,6 @@ const fetchContents = async () => {
   const toggleModule = (moduleId, unlocked) => {
     if (!unlocked) return;
     setOpenModuleId(openModuleId === moduleId ? null : moduleId);
-    setTree(null);
     setFileContent(null);
   };
 
@@ -282,13 +296,24 @@ const fetchContents = async () => {
   // ------------------------------
   // ATTACHMENTS
   // ------------------------------
-  const loadAttachmentTree = async (videoId) => {
+const loadAttachmentTree = async (videoId) => {
+  try {
+    setAttachmentLoading(prev => ({ ...prev, [videoId]: true }));
+
     const res = await api.get(
       `/courses/${id}/videos/${videoId}/attachment-tree/`
     );
-    setTree(res.data.tree);
-    setFileContent(null);
-  };
+
+    setTreeByVideo(prev => ({
+      ...prev,
+      [videoId]: res.data.tree
+    }));
+  } finally {
+    setAttachmentLoading(prev => ({ ...prev, [videoId]: false }));
+  }
+};
+
+
 
   const loadFileContent = async (videoId, filePath) => {
     const res = await api.get(
@@ -465,12 +490,25 @@ if (loading || (course?.is_enrolled && modulesLoading)) {
       {/* ================= COURSE CONTENT ================= */}
       {course.is_enrolled && (
   <div className="bg-white border rounded-2xl shadow-sm p-8">
-    <h2 className="text-2xl font-bold text-slate-900 mb-6">
-      Course Content
-    </h2>
+  <h2 className="text-2xl font-bold text-slate-900 mb-6">
+    Course Content
+  </h2>
 
-    <div className="space-y-4">
-      {moduleProgress.map((item) => (
+  <div className="space-y-4">
+    {moduleProgress.map((item) => {
+      // 🔍 DEBUG LOGS (VERY IMPORTANT)
+      console.log("MODULE:", item);
+      console.log(
+        "VIDEO PROGRESS:",
+        item.video_id,
+        videoProgress[item.video_id]
+      );
+      console.log(
+        "TREE STATE:",
+        treeByVideo[item.video_id]
+      );
+
+      return (
         <div
           key={item.module_id}
           className={`module-item p-4 ${
@@ -513,34 +551,52 @@ if (loading || (course?.is_enrolled && modulesLoading)) {
                     className="inline-block"
                   >
                     <img
-  src={defaultThumb}
-  alt="Video thumbnail"
-  className="w-48 rounded-lg border hover:shadow-md transition"
-/>
-
-
+                      src={defaultThumb}
+                      alt="Video thumbnail"
+                      className="w-48 rounded-lg border hover:shadow-md transition"
+                    />
                   </Link>
+                  <br />
 
-                  {/* ---------- Attachments- ---------- */}
-                  {item.attachment_url && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        loadAttachmentTree(item.video_id);
-                      }}
-                      className="text-sm font-medium text-indigo-600 hover:text-indigo-800 underline"
-                    >
-                      View Code Files
-                    </button>
-                  )}
+                  {/* ---------- Attachments Button ---------- */}
+                  {videoProgress[item.video_id]?.has_attachment ? (
+  attachmentLoading[item.video_id] ? (
+    <span className="flex items-center gap-2 text-sm text-indigo-500">
+      <span className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      Loading files…
+    </span>
+  ) : (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        loadAttachmentTree(item.video_id);
+      }}
+      className="text-sm font-medium text-indigo-600 hover:text-indigo-800 underline"
+    >
+      View Code Files
+    </button>
+  )
+) : (
+  <span className="text-sm text-slate-400 italic">
+    No files
+  </span>
+)}
+
+
 
                   {/* ---------- Tree View ---------- */}
-                  {tree && (
+                  {treeByVideo[item.video_id] && (
                     <TreeView
-                      tree={tree}
-                      onSelect={(fp) =>
-                        loadFileContent(item.video_id, fp)
-                      }
+                      tree={treeByVideo[item.video_id]}
+                      onSelect={(fp) => {
+                        console.log(
+                          "📄 Loading file:",
+                          fp,
+                          "for video:",
+                          item.video_id
+                        );
+                        loadFileContent(item.video_id, fp);
+                      }}
                     />
                   )}
 
@@ -570,9 +626,12 @@ if (loading || (course?.is_enrolled && modulesLoading)) {
             </div>
           )}
         </div>
-      ))}
-    </div>
+      );
+    })}
   </div>
+</div>
+
+
 )}
 
       {/* ================= GITHUB SUBMISSION ================= */}
