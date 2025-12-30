@@ -190,6 +190,7 @@ const handleSubmit = async (e) => {
   loadAll();
 }, []);
 
+
 const partners = [
   "Kerala Startup Mission",
   "Dubai Smart Systems",
@@ -235,6 +236,7 @@ useEffect(() => {
      HANDLERS
   ---------------------------------- */
   
+  
 
 
   return (
@@ -261,7 +263,7 @@ useEffect(() => {
           <div className="h-full w-full bg-gradient-to-r from-black/60 via-black/20 to-transparent flex items-center">
             <div className="max-w-6xl mx-auto px-6 lg:px-12">
               <div className="max-w-xl">
-                <p className="text-sm uppercase tracking-widest mb-3 text-white">
+                <p className="text-sm uppercase tracking-widest mb-3 text-white ">
                   Nexston Corporations Pvt Ltd
                 </p>
 
@@ -274,11 +276,12 @@ useEffect(() => {
                 </p>
 
                 <a
-                  href="#services"
-                  className="inline-block px-5 py-3 rounded-md font-medium text-white bg-indigo-600 hover:bg-indigo-700"
-                >
-                  Explore Services
-                </a>
+  href="#services"
+  className="inline-block px-5 py-3 rounded-md font-medium text-white stat-gradient-background hover:opacity-90 transition"
+>
+  Explore Services
+</a>
+
               </div>
             </div>
           </div>
@@ -303,7 +306,7 @@ useEffect(() => {
       {/* NEWS / MARQUEE */}
       <section className={`border-y ${borderColor} ${isDark ? "bg-slate-800" : "bg-gray-50"}`}>
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4">
-          <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600">Latest at Nexston</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-indigo-600 stat-gradient">Latest at Nexston</span>
           <div className="overflow-hidden flex-1">
             <div className="animate-marquee whitespace-nowrap flex gap-10 text-sm text-gray-700">
               <span>🚀 Launch: AI-enabled internship projects — 2025 batch.</span>
@@ -316,24 +319,35 @@ useEffect(() => {
       </section>
 
       {/* STATS / COUNTERS */}
-      <section className={`${cardBg} py-16 md:py-20 text-center`} ref={counterRef}>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-6xl mx-auto px-6">
-          {[
-            ["Enterprise Clients", 24],
-            ["Students Trained", 950],
-            ["Internships", 220],
-            ["Delivered Projects", 85],
-          ].map(([label, value], i) => (
-            <div key={i} className="text-center">
-              <h3 className="text-4xl md:text-5xl font-extrabold text-indigo-600">
-                {mounted && inView ? <CountUp start={0} end={value} duration={2.4} /> : 0}
-                <span className="text-xl">+</span>
-              </h3>
-              <p className={`${mutedText} mt-2 text-base md:text-lg`}>{label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <section
+  className={`${cardBg} py-16 md:py-20 text-center`}
+  ref={counterRef}
+>
+  <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-6xl mx-auto px-6">
+    {[
+      ["Enterprise Clients", 24],
+      ["Students Trained", 950],
+      ["Internships", 220],
+      ["Delivered Projects", 85],
+    ].map(([label, value], i) => (
+      <div key={i} className="text-center">
+        <h3 className="text-4xl md:text-5xl font-extrabold stat-gradient">
+          {mounted && inView ? (
+            <CountUp start={0} end={value} duration={2.4} />
+          ) : (
+            0
+          )}
+          <span className="text-xl">+</span>
+        </h3>
+
+        <p className={`${mutedText} mt-2 text-base md:text-lg`}>
+          {label}
+        </p>
+      </div>
+    ))}
+  </div>
+</section>
+
 
       {/* MISSION SLIDER (Teamwork / Collaboration) */}
       <section className="max-w-6xl mx-auto px-4 md:px-6 py-10">
@@ -389,7 +403,7 @@ useEffect(() => {
               },
             ].map((c, i) => (
               <div key={i} className={`${cardBg} p-6 rounded-2xl shadow-sm hover:shadow-lg transition`}>
-                <h4 className="text-2xl font-semibold text-indigo-600 mb-3">{c.title}</h4>
+                <h4 className="text-2xl font-semibold text-indigo-600 mb-3 stat-gradient">{c.title}</h4>
                 <p className={`${mutedText} leading-7`}>{c.desc}</p>
               </div>
             ))}
@@ -400,17 +414,17 @@ useEffect(() => {
       {/* PARTNERS MARQUEE */}
       <section className={`${cardBg} py-12`}>
   <div className="max-w-7xl mx-auto px-6 text-center">
-    <h3 className="text-2xl font-semibold mb-6">
+    <h3 className="text-2xl font-semibold mb-6 ">
       Trusted Collaborations
     </h3>
 
     <div className="ticker-container">
-      <div className="ticker-track">
-        <span>Kerala Startup Mission</span>
-        <span>Dubai Smart Systems</span>
-        <span>Kerala Skills Hub</span>
-        <span>AI Research Labs</span>
-        <span>Future IT Solutions</span>
+      <div className="ticker-track  ">
+        <span className="stat-gradient">Kerala Startup Mission</span>
+        <span className="stat-gradient">Dubai Smart Systems</span>
+        <span className="stat-gradient">Kerala Skills Hub</span>
+        <span className="stat-gradient">AI Research Labs</span>
+        <span className="stat-gradient">Future IT Solutions</span>
       </div>
     </div>
   </div>
@@ -423,16 +437,21 @@ useEffect(() => {
         <div className="max-w-4xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div>
-              <h3 className="text-3xl font-bold mb-3">Grow With Us</h3>
-              <p className={`${mutedText} mb-6`}>
-                Interested in internships, partnerships, or hiring our trained students? Leave your details and our corporate team will reach out.
-              </p>
-              <ul className="text-sm text-gray-600 space-y-2">
-                <li>• 12-week industry-driven internships</li>
-                <li>• Live projects & mentorship</li>
-                <li>• Placement assistance & portfolio reviews</li>
-              </ul>
-            </div>
+  <h3 className="text-3xl font-bold mb-3">Grow With Us</h3>
+
+  <p className={`${mutedText} mb-6`}>
+    Looking to collaborate, outsource technology solutions, or engage with our
+    engineering teams? Share your details and our corporate representatives will
+    connect with you.
+  </p>
+
+  <ul className="text-sm text-gray-600 space-y-2">
+    <li>• Enterprise software development & consulting</li>
+    <li>• Digital engineering and technology partnerships</li>
+    <li>• Custom solutions tailored to business objectives</li>
+  </ul>
+</div>
+
 
             <form
   onSubmit={handleSubmit}
@@ -469,7 +488,7 @@ useEffect(() => {
   <button
   type="submit"
   disabled={submitting}
-  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-md font-semibold disabled:opacity-50"
+  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-md font-semibold disabled:opacity-50 stat-gradient-background"
 >
   {submitting ? "Submitting..." : "Submit"}
 </button>
@@ -539,19 +558,38 @@ useEffect(() => {
 
 
       {/* INTERNSHIP CTA */}
-      <section className="py-16 bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-center">
-        <div className="max-w-4xl mx-auto px-6">
-          <h3 className="text-3xl md:text-4xl font-bold mb-4">Internship Program 2025</h3>
-          <p className="mb-6">Hands-on projects, mentorship and placement guidance — join the next cohort.</p>
-          <button
+      <section className="py-16 stat-gradient-background text-white text-center">
+  <div className="max-w-4xl mx-auto px-6">
+    <h3 className="text-3xl md:text-4xl font-bold mb-4">
+      Internship Program 2025
+    </h3>
+
+    <p className="mb-6">
+      Hands-on projects, mentorship and placement guidance — join the next cohort.
+    </p>
+
+    <button
   onClick={handleApply}
-  className="inline-block bg-white text-indigo-700 px-6 py-3 rounded-md font-semibold"
+  className="
+    inline-block
+    px-6 py-3
+    rounded-md
+    font-semibold
+    text-white
+    border border-white
+    bg-transparent
+    hover:bg-white
+    hover:text-slate-900
+    transition
+  "
 >
-  Apply for Internship →
+  Apply Now →
 </button>
-        </div>
-      </section>
-      <AIChatWidget />
+
+  </div>
+</section>
+
+      <AIChatWidget className="stat-gradient-background" />
 
 
       {/* Floating WhatsApp */}
@@ -572,7 +610,7 @@ useEffect(() => {
 
       {/* Company Info */}
       <div>
-  <h4 className="text-lg font-semibold text-white mb-3">
+  <h4 className="text-lg font-semibold text-white mb-3 stat-gradient">
     Nexston Corporations Pvt Ltd
   </h4>
 
@@ -591,7 +629,7 @@ certificate verification portal.
 
   <Link
     to="/verify-certificate"
-    className="mt-3 inline-block text-sm font-medium text-gray-300 hover:text-white underline underline-offset-4"
+    className="mt-3 inline-block text-sm font-medium text-gray-300 hover:text-white underline underline-offset-4 stat-gradient"
   >
     Verify Certificate
   </Link>
@@ -601,7 +639,7 @@ certificate verification portal.
 
       {/* Address */}
       <div>
-  <h4 className="text-lg font-semibold text-white mb-3">
+  <h4 className="text-lg font-semibold text-white mb-3 stat-gradient">
     Corporate Office
   </h4>
 
@@ -632,7 +670,7 @@ certificate verification portal.
 
       {/* Social Links */}
       <div>
-        <h4 className="text-lg font-semibold text-white mb-3">
+        <h4 className="text-lg font-semibold text-white mb-3 stat-gradient">
           Connect With Us
         </h4>
 

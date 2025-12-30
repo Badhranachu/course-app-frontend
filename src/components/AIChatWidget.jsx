@@ -3,7 +3,7 @@ import { FiMessageSquare, FiX } from "react-icons/fi";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function AIChatWidget() {
-  const { token } = useAuth(); // must contain token
+  const { token } = useAuth();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
@@ -11,7 +11,6 @@ export default function AIChatWidget() {
 
   const messagesEndRef = useRef(null);
 
-  // 🔹 Auto-scroll when new message arrives
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -19,21 +18,15 @@ export default function AIChatWidget() {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    // 🔐 Block guests
     if (!token) {
       setMessages((prev) => [
         ...prev,
-        {
-          role: "ai",
-          text: "Please log in to use Nexston AI.",
-        },
+        { role: "ai", text: "Please log in to use Nexston AI." },
       ]);
       return;
     }
 
     const userText = input;
-
-    // Add user message
     setMessages((prev) => [...prev, { role: "user", text: userText }]);
     setInput("");
     setLoading(true);
@@ -43,32 +36,21 @@ export default function AIChatWidget() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Token ${token}`, // ✅ correct auth
+          Authorization: `Token ${token}`,
         },
         body: JSON.stringify({ question: userText }),
       });
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || "Request failed");
-      }
-
-      // Add AI reply
       setMessages((prev) => [
         ...prev,
-        {
-          role: "ai",
-          text: data.answer || "No response from AI.",
-        },
+        { role: "ai", text: data.answer || "No response from AI." },
       ]);
-    } catch (err) {
+    } catch {
       setMessages((prev) => [
         ...prev,
-        {
-          role: "ai",
-          text: "AI is temporarily unavailable. Please try again.",
-        },
+        { role: "ai", text: "AI is temporarily unavailable. Please try again." },
       ]);
     } finally {
       setLoading(false);
@@ -77,11 +59,16 @@ export default function AIChatWidget() {
 
   return (
     <>
-      {/* 🔵 Floating AI Button (only for logged-in users) */}
+      {/* 🔵 Floating AI Button */}
       {token && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-24 right-6 bg-indigo-600 text-white p-4 rounded-full shadow-xl z-40"
+          className="
+            fixed bottom-24 right-6
+            stat-gradient-background
+            text-white p-4 rounded-full
+            shadow-xl z-40
+          "
           aria-label="AI Chat"
         >
           <FiMessageSquare size={22} />
@@ -93,7 +80,7 @@ export default function AIChatWidget() {
         <div className="fixed bottom-32 right-6 w-80 h-96 bg-white rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden">
           
           {/* Header */}
-          <div className="bg-indigo-600 text-white px-4 py-3 flex justify-between items-center">
+          <div className="stat-gradient-background text-white px-4 py-3 flex justify-between items-center">
             <span className="font-semibold">Nexston AI</span>
             <button onClick={() => setOpen(false)}>
               <FiX />
@@ -134,7 +121,7 @@ export default function AIChatWidget() {
             <button
               onClick={sendMessage}
               disabled={loading}
-              className="bg-indigo-600 text-white px-3 rounded-md text-sm disabled:opacity-50"
+              className="stat-gradient-background text-white px-3 rounded-md text-sm disabled:opacity-50"
             >
               Send
             </button>

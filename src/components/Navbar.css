@@ -27,3 +27,14 @@
 .animate-slideDown {
   animation: slideDown 0.3s ease-out;
 }
+
+
+.stat-gradient-background {
+  background: linear-gradient(
+    135deg,
+    #1e40af 0%,     /* deep blue */
+    #4338ca 30%,    /* indigo */
+    #d30964 65%,    /* pink */
+    #f58529 100%    /* soft orange */
+  );
+}
