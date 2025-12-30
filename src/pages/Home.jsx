@@ -18,6 +18,9 @@ import "./Home.css";   // 👈 THIS links the CSS
 import { useAuth } from "../contexts/AuthContext";
 import loadingImg from "../assets/loading.png";
 import AIChatWidget from "../components/AIChatWidget";
+import { useSwiper } from "swiper/react";
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+
 
 /* ----------------------------------
    Image preloader (NECESSARY)
@@ -187,6 +190,25 @@ const handleSubmit = async (e) => {
   loadAll();
 }, []);
 
+const partners = [
+  "Kerala Startup Mission",
+  "Dubai Smart Systems",
+  "Kerala Skills Hub",
+  "AI Research Labs",
+  "Future IT Solutions",
+];
+
+const [index, setIndex] = useState(0);
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    setIndex((prev) => (prev + 1) % partners.length);
+  }, 2500); // time per item
+
+  return () => clearInterval(interval);
+}, []);
+
+
 
 
 
@@ -217,73 +239,66 @@ const handleSubmit = async (e) => {
 
   return (
     <div className={`${pageBg} min-h-screen font-sans`}>
-      {/* Theme toggle
-      <button
-        onClick={() => setIsDark((s) => !s)}
-        className="fixed z-40 bottom-6 left-6 flex items-center gap-2 px-4 py-2 rounded-full shadow-lg bg-white/90 dark:bg-slate-800 dark:text-gray-100"
-        aria-label="Toggle theme"
-      >
-        {isDark ? <FiSun /> : <FiMoon />}
-        <span className="text-sm font-medium">{isDark ? "Light" : "Dark"}</span>
-      </button> */}
-
       {/* HERO SLIDER */}
-      <header className="relative w-full h-[78vh] md:h-[82vh] overflow-hidden">
-        <Swiper
-          modules={[Autoplay, Pagination, Navigation, EffectFade]}
-          autoplay={{ delay: 4200, disableOnInteraction: false }}
-          effect="fade"
-          pagination={{ clickable: true }}
-          navigation
-          loop
-          className="h-full w-full"
+      <header className="relative w-full h-[78vh] md:h-[82vh] overflow-hidden hero-slider">
+  <Swiper
+    modules={[Autoplay, Pagination, Navigation, EffectFade]}
+    autoplay={{ delay: 4200, disableOnInteraction: false }}
+    effect="fade"
+    pagination={{ clickable: true }}
+    navigation
+    loop
+    className="h-full w-full"
+  >
+    {heroSlides.map((s, i) => (
+      <SwiperSlide key={i}>
+        <div
+          className="h-full w-full bg-cover bg-center flex items-center"
+          style={{ backgroundImage: `url(${s.img})` }}
+          role="img"
+          aria-label={s.title}
         >
-          {heroSlides.map((s, i) => (
-            <SwiperSlide key={i}>
-              <div
-                className="h-full w-full bg-cover bg-center flex items-center"
-                style={{
-                  backgroundImage: `url(${s.img})`,
-                }}
-                role="img"
-                aria-label={s.title}
-              >
-                <div className="h-full w-full bg-gradient-to-r from-black/60 via-black/20 to-transparent flex items-center">
-                  <div className="max-w-6xl mx-auto px-6 lg:px-12">
-                    <div className="max-w-xl">
-                      <p className="text-sm uppercase tracking-widest mb-3 text-white-300" style={{color:"grey"}}>
-                        Nexston Corporations Pvt Ltd
-                      </p>
-                      <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-4 leading-tight">
-                        {s.title}
-                      </h1>
-                      <p className="text-lg text-gray-100 mb-6">{s.sub}</p>
+          <div className="h-full w-full bg-gradient-to-r from-black/60 via-black/20 to-transparent flex items-center">
+            <div className="max-w-6xl mx-auto px-6 lg:px-12">
+              <div className="max-w-xl">
+                <p className="text-sm uppercase tracking-widest mb-3 text-white">
+                  Nexston Corporations Pvt Ltd
+                </p>
 
-                      <div className="flex flex-wrap gap-3">
-                        {/* <button
-  onClick={handleApply}
-  className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-md font-semibold shadow"
->
-  Apply for Internship
-</button> */}
-                        <a
-  href="#services"
-  className="inline-block px-5 py-3 rounded-md font-medium text-white"
-  style={{ backgroundColor: "rgb(67 56 202)" }}
->
-  Explore Services
-</a>
+                <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-4 leading-tight">
+                  {s.title}
+                </h1>
 
+                <p className="text-lg text-gray-100 mb-6">
+                  {s.sub}
+                </p>
 
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <a
+                  href="#services"
+                  className="inline-block px-5 py-3 rounded-md font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Explore Services
+                </a>
               </div>
-            </SwiperSlide>
-          ))}
-        </Swiper>
-      </header>
+            </div>
+          </div>
+        </div>
+      </SwiperSlide>
+    ))}
+  </Swiper>
+</header>
+
+
+      
+
+
+
+
+      
+
+
+
+
 
       {/* NEWS / MARQUEE */}
       <section className={`border-y ${borderColor} ${isDark ? "bg-slate-800" : "bg-gray-50"}`}>
@@ -323,18 +338,18 @@ const handleSubmit = async (e) => {
       {/* MISSION SLIDER (Teamwork / Collaboration) */}
       <section className="max-w-6xl mx-auto px-4 md:px-6 py-10">
         <h2 className="mission text-3xl md:text-4xl font-bold mb-6 text-center">Our Mission & Approach</h2>
-        {/* <h2 className="hai">hai</h2> */}
 
         <div className="relative w-full h-[60vh] md:h-[56vh] rounded-xl overflow-hidden shadow-lg">
           <Swiper
-            modules={[Autoplay, Pagination, Navigation, EffectFade]}
-            autoplay={{ delay: 3800, disableOnInteraction: false }}
-            effect="fade"
-            pagination={{ clickable: true }}
-            navigation
-            loop
-            className="h-full w-full"
-          >
+  modules={[Autoplay, Pagination, EffectFade]}
+  autoplay={{ delay: 2000, disableOnInteraction: false }}
+  effect="fade"
+  pagination={{ clickable: true }}
+  loop
+  loopAdditionalSlides={1}
+  className="h-full w-full"
+>
+
             {missionSlides.map((m, idx) => (
               <SwiperSlide key={idx}>
                 <div
@@ -384,19 +399,24 @@ const handleSubmit = async (e) => {
 
       {/* PARTNERS MARQUEE */}
       <section className={`${cardBg} py-12`}>
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <h3 className="text-2xl font-semibold mb-6">Trusted Collaborations</h3>
-          <div className="overflow-hidden">
-            <div className="animate-marquee whitespace-nowrap flex gap-16 justify-center items-center text-lg font-medium">
-              <span>Kerala Startup Mission</span>
-              <span>Dubai Smart Systems</span>
-              <span>Kerala Skills Hub</span>
-              <span>AI Research Labs</span>
-              <span>Future IT Solutions</span>
-            </div>
-          </div>
-        </div>
-      </section>
+  <div className="max-w-7xl mx-auto px-6 text-center">
+    <h3 className="text-2xl font-semibold mb-6">
+      Trusted Collaborations
+    </h3>
+
+    <div className="ticker-container">
+      <div className="ticker-track">
+        <span>Kerala Startup Mission</span>
+        <span>Dubai Smart Systems</span>
+        <span>Kerala Skills Hub</span>
+        <span>AI Research Labs</span>
+        <span>Future IT Solutions</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+
 
       {/* GROW WITH US FORM */}
       <section className={`${isDark ? "bg-slate-900" : "bg-white"} py-16`}>
@@ -552,14 +572,32 @@ const handleSubmit = async (e) => {
 
       {/* Company Info */}
       <div>
-        <h4 className="text-lg font-semibold text-white mb-3">
-          Nexston Corporations Pvt Ltd
-        </h4>
-        <p className="text-sm text-gray-400 leading-relaxed">
-          Enterprise technology solutions, digital engineering, and
-          industry-ready skilling programs.
-        </p>
-      </div>
+  <h4 className="text-lg font-semibold text-white mb-3">
+    Nexston Corporations Pvt Ltd
+  </h4>
+
+  <p className="text-sm text-gray-400 leading-relaxed">
+  Nexston Corporations Pvt Ltd delivers enterprise software solutions,
+  digital engineering services, and industry-aligned skilling programs
+  focused on practical, real-world learning.
+</p>
+
+
+  <p className="mt-3 text-sm text-gray-500 leading-relaxed">
+    All certificates issued by Nexston can be verified through our official
+certificate verification portal.
+
+  </p>
+
+  <Link
+    to="/verify-certificate"
+    className="mt-3 inline-block text-sm font-medium text-gray-300 hover:text-white underline underline-offset-4"
+  >
+    Verify Certificate
+  </Link>
+</div>
+
+
 
       {/* Address */}
       <div>

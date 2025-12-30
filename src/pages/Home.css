@@ -43,3 +43,90 @@
   opacity: 0.9;
 }
 
+
+
+/* ===== HERO SLIDER ARROWS ===== */
+.hero-slider .swiper-button-next,
+.hero-slider .swiper-button-prev {
+  color: white;
+  /* background: rgba(0, 0, 0, 0.45); */
+  border-radius: 9999px;
+  transition: all 0.25s ease;
+}
+
+/* Desktop & Tablet */
+@media (min-width: 768px) {
+  .hero-slider .swiper-button-next,
+  .hero-slider .swiper-button-prev {
+    width: 48px;
+    height: 48px;
+  }
+
+  .hero-slider .swiper-button-next::after,
+  .hero-slider .swiper-button-prev::after {
+    font-size: 20px;
+    font-weight: bold;
+  }
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .hero-slider .swiper-button-next,
+  .hero-slider .swiper-button-prev {
+    width: 24px;
+    height: 24px;
+  }
+
+  .hero-slider .swiper-button-next::after,
+  .hero-slider .swiper-button-prev::after {
+    font-size: 14px;
+  }
+}
+
+
+.ticker-container {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  height: 2.8rem;
+}
+
+/* Train track */
+.ticker-track {
+  display: flex;
+  align-items: center;
+  gap: 7rem;
+  width: max-content;
+
+  /* SAME behavior everywhere */
+  animation: ticker-train 30s linear infinite;
+}
+
+/* Text */
+.ticker-track span {
+  white-space: nowrap;
+  font-size: 1.125rem;
+  font-weight: 500;
+}
+
+/* FULL-WIDTH movement (desktop + mobile) */
+@keyframes ticker-train {
+  from {
+    transform: translateX(100vw);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* 📱 Mobile adjustments (optional but clean) */
+@media (max-width: 640px) {
+  .ticker-track {
+    gap: 4rem;          /* tighter spacing on mobile */
+    animation-duration: 40s; /* slower = more readable */
+  }
+
+  .ticker-track span {
+    font-size: 1rem;
+  }
+}

@@ -137,7 +137,7 @@ setError(
             <p>✔ Industry-level Internships</p>
             <p>✔ Microservices, AI, MERN Stack</p>
             <p>✔ Real Live Projects</p>
-            <p>✔ Placement Assistance</p>
+            {/* <p>✔ Placement Assistance</p> */}
           </div>
         </div>
 
@@ -187,13 +187,14 @@ setError(
                 />
                 {!otpSent && (
                   <button
-                    type="button"
-                    onClick={sendOtp}
-                    disabled={!formData.email || loading}
-                    className="text-sm bg-indigo-600 text-white px-3 py-1 rounded"
-                  >
-                    Send OTP
-                  </button>
+  type="button"
+  onClick={sendOtp}
+  disabled={!formData.email || loading}
+  className="w-[120px] text-sm bg-indigo-600 text-white px-3 py-1 rounded"
+>
+  Send OTP
+</button>
+
                 )}
               </div>
             </div>

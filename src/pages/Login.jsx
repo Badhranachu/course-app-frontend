@@ -48,7 +48,7 @@ function Login() {
       
       {/* PAGE HEADING */}
       <h1 className="text-3xl md:text-4xl font-extrabold text-center text-indigo-700 mb-6">
-        Bekola Internship Portal – Login
+        Nexston Internship Portal – Login
       </h1>
 
       <div className="max-w-5xl w-full bg-white shadow-xl rounded-2xl overflow-hidden grid grid-cols-1 md:grid-cols-2">

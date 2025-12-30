@@ -39,7 +39,8 @@ function Navbar() {
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50 font-[Inter]">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="w-full px-6 py-3 flex items-center justify-between">
+
 
         {/* ================= LOGO ================= */}
         <Link to="/" className="flex items-center gap-2">
@@ -59,9 +60,9 @@ function Navbar() {
             Internship
           </span>
 
-          <Link to="/verify-certificate" className="nav-link">
+          {/* <Link to="/verify-certificate" className="nav-link">
             Verify Certificate
-          </Link>
+          </Link> */}
 
           {!user ? (
             <>
@@ -139,9 +140,9 @@ function Navbar() {
 
           <MobileLink onClick={handleApply}>Internship</MobileLink>
 
-          <MobileLink to="/verify-certificate" onClick={() => setMenuOpen(false)}>
+          {/* <MobileLink to="/verify-certificate" onClick={() => setMenuOpen(false)}>
             Verify Certificate
-          </MobileLink>
+          </MobileLink> */}
 
           {!user ? (
             <>
