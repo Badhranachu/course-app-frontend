@@ -559,28 +559,35 @@ if (loading || (course?.is_enrolled && modulesLoading)) {
                   <br />
 
                   {/* ---------- Attachments Button ---------- */}
-                  {videoProgress[item.video_id]?.has_attachment ? (
-  attachmentLoading[item.video_id] ? (
-    <span className="flex items-center gap-2 text-sm text-indigo-500">
-      <span className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-      Loading files…
-    </span>
+                  {videoProgress[item.video_id] ? (
+  videoProgress[item.video_id].has_attachment ? (
+    attachmentLoading[item.video_id] ? (
+      <span className="flex items-center gap-2 text-sm text-indigo-500">
+        <span className="w-4 h-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+        Loading files…
+      </span>
+    ) : (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          loadAttachmentTree(item.video_id);
+        }}
+        className="text-sm font-medium text-indigo-600 hover:text-indigo-800 underline"
+      >
+        View Code Files
+      </button>
+    )
   ) : (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        loadAttachmentTree(item.video_id);
-      }}
-      className="text-sm font-medium text-indigo-600 hover:text-indigo-800 underline"
-    >
-      View Code Files
-    </button>
+    <span className="text-sm text-slate-400 italic">
+      No files
+    </span>
   )
 ) : (
   <span className="text-sm text-slate-400 italic">
-    No files
+    Checking files…
   </span>
 )}
+
 
 
 
