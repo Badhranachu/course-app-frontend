@@ -162,6 +162,8 @@ const handleSubmit = async (e) => {
      LOAD EVERYTHING FIRST
   ---------------------------------- */
   useEffect(() => {
+  let isMounted = true;
+
   const loadAll = async () => {
     const allImages = [
       ...heroSlides.map((s) => s.img),
@@ -169,20 +171,30 @@ const handleSubmit = async (e) => {
       ...testimonialImages,
     ];
 
-    // 1st second → logo only
-    setTimeout(() => setShowText(true), 1000);
+    try {
+      // preload images + minimum delay
+      await Promise.all([
+        preloadImages(allImages),
+        new Promise((resolve) => setTimeout(resolve, 1000)),
+      ]);
 
-    // Minimum 2 seconds loader + image preload
-    await Promise.all([
-      preloadImages(allImages),
-      new Promise((resolve) => setTimeout(resolve, 2000)),
-    ]);
-
-    setMounted(true);
-    setLoading(false);
+      if (isMounted) {
+        setMounted(true);
+        setLoading(false);
+      }
+    } catch (err) {
+      // even if image fails, do not block UI forever
+      if (isMounted) {
+        setLoading(false);
+      }
+    }
   };
 
   loadAll();
+
+  return () => {
+    isMounted = false;
+  };
 }, []);
 
 
@@ -212,20 +224,18 @@ useEffect(() => {
   /* ----------------------------------
      LOADING SCREEN
   ---------------------------------- */
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white">
-        <img
-          src={loadingImg}
-          alt="Loading"
-          className="w-40 md:w-56 animate-pulse"
-        />
-        <p className="mt-6 text-gray-500 text-sm tracking-wide">
-          {/* Loading experience... */}
-        </p>
-      </div>
-    );
-  }
+ if (loading) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+      <img
+        src={loadingImg}
+        alt="Loading"
+        className="w-40 md:w-56"
+      />
+    </div>
+  );
+}
+
 
   /* ----------------------------------
      HANDLERS
