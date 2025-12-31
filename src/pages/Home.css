@@ -136,7 +136,7 @@
     140deg,                 /* 👈 slight diagonal slope */
     #1e40af 0%,             /* deep blue */
     #4338ca 18%,            /* indigo / violet */
-    #f58529 38%,            /* orange */
+    /* #f58529 38%,            orange */
     #d30964 62%,            /* pink */
     #8134af 80%,            /* purple */
     #1827d5 90%            /* blue */
@@ -154,7 +154,7 @@
     #1e40af 0%,     /* deep blue */
     #4338ca 30%,    /* indigo */
     #d30964 65%,    /* pink */
-    #f58529 100%    /* soft orange */
+    #f58529 100%    
   );
 }
 

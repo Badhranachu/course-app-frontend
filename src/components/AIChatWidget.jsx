@@ -60,20 +60,19 @@ export default function AIChatWidget() {
   return (
     <>
       {/* 🔵 Floating AI Button */}
-      {token && (
-        <button
-          onClick={() => setOpen(true)}
-          className="
-            fixed bottom-24 right-6
-            stat-gradient-background
-            text-white p-4 rounded-full
-            shadow-xl z-40
-          "
-          aria-label="AI Chat"
-        >
-          <FiMessageSquare size={22} />
-        </button>
-      )}
+      <button
+  onClick={() => setOpen(true)}
+  className="
+    fixed bottom-24 right-6
+    stat-gradient-background
+    text-white p-4 rounded-full
+    shadow-xl z-40
+  "
+  aria-label="AI Chat"
+>
+  <FiMessageSquare size={22} />
+</button>
+
 
       {/* 🟣 Chat Window */}
       {open && (

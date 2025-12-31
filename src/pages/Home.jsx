@@ -523,7 +523,7 @@ useEffect(() => {
 
       {/* Company Info */}
       <div>
-  <h4 className="text-lg font-semibold text-white mb-3 stat-gradient">
+  <h4 className="text-lg font-semibold text-white mb-3 ">
     Nexston Corporations Pvt Ltd
   </h4>
 
@@ -542,7 +542,7 @@ certificate verification portal.
 
   <Link
     to="/verify-certificate"
-    className="mt-3 inline-block text-sm font-medium text-gray-300 hover:text-white underline underline-offset-4 stat-gradient"
+    className="mt-3 inline-block text-sm font-medium text-gray-300 hover:text-white underline underline-offset-4 "
   >
     Verify Certificate
   </Link>
@@ -552,7 +552,7 @@ certificate verification portal.
 
       {/* Address */}
       <div>
-  <h4 className="text-lg font-semibold text-white mb-3 stat-gradient">
+  <h4 className="text-lg font-semibold text-white mb-3 ">
     Corporate Office
   </h4>
 
@@ -583,7 +583,7 @@ certificate verification portal.
 
       {/* Social Links */}
       <div>
-        <h4 className="text-lg font-semibold text-white mb-3 stat-gradient">
+        <h4 className="text-lg font-semibold text-white mb-3 ">
           Connect With Us
         </h4>
 
