@@ -16,46 +16,69 @@ export default function AIChatWidget() {
   }, [messages, loading]);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+  if (!input.trim()) return;
 
-    if (!token) {
+  const userText = input;
+  setMessages((prev) => [...prev, { role: "user", text: userText }]);
+  setInput("");
+  setLoading(true);
+
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+    };
+
+    // Send token ONLY if logged in
+    if (token) {
+      headers.Authorization = `Token ${token}`;
+    }
+
+    const res = await fetch("/api/chat/", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ question: userText }),
+    });
+
+    const data = await res.json();
+
+    // 🚫 Guest limit reached
+    if (res.status === 403) {
       setMessages((prev) => [
         ...prev,
-        { role: "ai", text: "Please log in to use Nexston AI." },
+        { role: "ai", text: data.answer },
       ]);
       return;
     }
 
-    const userText = input;
-    setMessages((prev) => [...prev, { role: "user", text: userText }]);
-    setInput("");
-    setLoading(true);
+    // Normal AI reply
+    setMessages((prev) => [
+      ...prev,
+      { role: "ai", text: data.answer },
+    ]);
 
-    try {
-      const res = await fetch("/api/chat/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Token ${token}`,
-        },
-        body: JSON.stringify({ question: userText }),
-      });
+    // // Optional: show remaining guest messages
+    // if (data.remaining !== undefined) {
+    //   setMessages((prev) => [
+    //     ...prev,
+    //     {
+    //       role: "ai",
+    //       text: `Free messages left: ${data.remaining}`,
+    //     },
+    //   ]);
+    // }
 
-      const data = await res.json();
-
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: data.answer || "No response from AI." },
-      ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: "ai", text: "AI is temporarily unavailable. Please try again." },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (err) {
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "ai",
+        text: "AI is temporarily unavailable. Please try again.",
+      },
+    ]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <>

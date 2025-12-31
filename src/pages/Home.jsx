@@ -333,11 +333,11 @@ useEffect(() => {
 
     <div className="ticker-container">
       <div className="ticker-track  ">
-        <span className="stat-gradient">Kerala Startup Mission</span>
-        <span className="stat-gradient">Dubai Smart Systems</span>
-        <span className="stat-gradient">Kerala Skills Hub</span>
-        <span className="stat-gradient">AI Research Labs</span>
-        <span className="stat-gradient">Future IT Solutions</span>
+        <span >Kerala Startup Mission</span>
+        <span >Dubai Smart Systems</span>
+        <span >Kerala Skills Hub</span>
+        <span >AI Research Labs</span>
+        <span >Future IT Solutions</span>
       </div>
     </div>
   </div>
@@ -507,7 +507,7 @@ useEffect(() => {
 
       {/* Floating WhatsApp */}
      <a
-  href="https://wa.me/8547182997?text=Hi%20%0AI%20am%20interested%20in%20your%20course%20/%20internship.%0ACould%20you%20please%20share%20more%20details?"
+  href="https://wa.me/+918547182997?text=Hi%20%0AI%20am%20interested%20in%20your%20course%20/%20internship.%0ACould%20you%20please%20share%20more%20details?"
   target="_blank"
   rel="noreferrer"
   className="fixed bottom-6 right-6 bg-green-500 text-white p-4 rounded-full shadow-xl text-2xl z-40"
