@@ -1,12 +1,11 @@
 // src/pages/Home.jsx
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import CountUp from "react-countup";
 import { FaWhatsapp } from "react-icons/fa";
-import { useInView } from "react-intersection-observer";
+import StatsSection from "../components/StatsSection";
+import HeroSlider from "../components/HeroSlider";
+import MissionSlider from "../components/MissionSlider";
 
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay, Pagination, Navigation, EffectFade } from "swiper/modules";
 
 import "swiper/css";
 import "swiper/css/effect-fade";
@@ -48,10 +47,6 @@ function Home() {
   const [submitting, setSubmitting] = useState(false);
 
 
-  const { ref: counterRef, inView } = useInView({
-    triggerOnce: true,
-    threshold: 0.25,
-  });
 
   /* ----------------------------------
      SLIDES DATA (unchanged)
@@ -242,54 +237,11 @@ useEffect(() => {
   return (
     <div className={`${pageBg} min-h-screen font-sans`}>
       {/* HERO SLIDER */}
-      <header className="relative w-full h-[78vh] md:h-[82vh] overflow-hidden hero-slider">
-  <Swiper
-    modules={[Autoplay, Pagination, Navigation, EffectFade]}
-    autoplay={{ delay: 4200, disableOnInteraction: false }}
-    effect="fade"
-    pagination={{ clickable: true }}
-    navigation
-    loop
-    className="h-full w-full"
-  >
-    {heroSlides.map((s, i) => (
-      <SwiperSlide key={i}>
-        <div
-          className="h-full w-full bg-cover bg-center flex items-center"
-          style={{ backgroundImage: `url(${s.img})` }}
-          role="img"
-          aria-label={s.title}
-        >
-          <div className="h-full w-full bg-gradient-to-r from-black/60 via-black/20 to-transparent flex items-center">
-            <div className="max-w-6xl mx-auto px-6 lg:px-12">
-              <div className="max-w-xl">
-                <p className="text-sm uppercase tracking-widest mb-3 text-white ">
-                  Nexston Corporations Pvt Ltd
-                </p>
-
-                <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-4 leading-tight">
-                  {s.title}
-                </h1>
-
-                <p className="text-lg text-gray-100 mb-6">
-                  {s.sub}
-                </p>
-
-                <a
-  href="#services"
-  className="inline-block px-5 py-3 rounded-md font-medium text-white stat-gradient-background hover:opacity-90 transition"
->
-  Explore Services
-</a>
-
-              </div>
-            </div>
-          </div>
-        </div>
-      </SwiperSlide>
-    ))}
-  </Swiper>
+      {/* HERO SLIDER */}
+<header className="relative w-full h-[78vh] md:h-[82vh] overflow-hidden hero-slider">
+  <HeroSlider slides={heroSlides} />
 </header>
+
 
 
       
@@ -319,34 +271,9 @@ useEffect(() => {
       </section>
 
       {/* STATS / COUNTERS */}
-      <section
-  className={`${cardBg} py-16 md:py-20 text-center`}
-  ref={counterRef}
->
-  <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-6xl mx-auto px-6">
-    {[
-      ["Enterprise Clients", 24],
-      ["Students Trained", 950],
-      ["Internships", 220],
-      ["Delivered Projects", 85],
-    ].map(([label, value], i) => (
-      <div key={i} className="text-center">
-        <h3 className="text-4xl md:text-5xl font-extrabold stat-gradient">
-          {mounted && inView ? (
-            <CountUp start={0} end={value} duration={2.4} />
-          ) : (
-            0
-          )}
-          <span className="text-xl">+</span>
-        </h3>
+      
+      <StatsSection cardBg={cardBg} mutedText={mutedText} />
 
-        <p className={`${mutedText} mt-2 text-base md:text-lg`}>
-          {label}
-        </p>
-      </div>
-    ))}
-  </div>
-</section>
 
 
       {/* MISSION SLIDER (Teamwork / Collaboration) */}
@@ -354,33 +281,9 @@ useEffect(() => {
         <h2 className="mission text-3xl md:text-4xl font-bold mb-6 text-center">Our Mission & Approach</h2>
 
         <div className="relative w-full h-[60vh] md:h-[56vh] rounded-xl overflow-hidden shadow-lg">
-          <Swiper
-  modules={[Autoplay, Pagination, EffectFade]}
-  autoplay={{ delay: 2000, disableOnInteraction: false }}
-  effect="fade"
-  pagination={{ clickable: true }}
-  loop
-  loopAdditionalSlides={1}
-  className="h-full w-full"
->
+  <MissionSlider slides={missionSlides} />
+</div>
 
-            {missionSlides.map((m, idx) => (
-              <SwiperSlide key={idx}>
-                <div
-                  className="h-full w-full bg-cover bg-center flex items-center"
-                  style={{ backgroundImage: `url(${m.img})` }}
-                >
-                  <div className="h-full w-full bg-gradient-to-b from-black/45 to-black/25 flex items-center">
-                    <div className="max-w-3xl mx-auto px-6 text-center">
-                      <h3 className="text-3xl md:text-4xl font-bold text-white mb-3">{m.title}</h3>
-                      <p className="text-lg text-gray-100">{m.sub}</p>
-                    </div>
-                  </div>
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-        </div>
       </section>
 
       {/* SERVICES (target) */}
