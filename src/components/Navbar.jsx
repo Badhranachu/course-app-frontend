@@ -60,9 +60,12 @@ function Navbar() {
             Internship
           </span>
 
-          {/* <Link to="/verify-certificate" className="nav-link">
-            Verify Certificate
-          </Link> */}
+          <span>
+            <Link to="/contact" className="nav-link">Contact Us</Link>
+          </span>
+          
+
+         
 
           {!user ? (
             <>

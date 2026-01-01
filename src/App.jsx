@@ -21,6 +21,7 @@ import Announcements from "./pages/Announcements";
 import StudentProfile from "./pages/StudentProfile";
 import Bills from "./pages/Bills";
 import Support from "./pages/Support";
+import Contact from "./pages/Contact";
 
 // ===============================
 // Private Route Wrapper
@@ -137,6 +138,8 @@ function App() {
             <Route path="/profile" element={<StudentProfile />} />
             <Route path="/bills" element={<Bills />} />
             <Route path="/support" element={<Support />} />
+            <Route path="/contact" element={<Contact />} />
+
 
 
 

@@ -22,6 +22,8 @@ function Signup() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showOtpHint, setShowOtpHint] = useState(false);
+
 
   const { signup } = useAuth();
   const navigate = useNavigate();
@@ -173,6 +175,13 @@ function Signup() {
               Login
             </Link>
           </p>
+
+          
+          <div className="bg-green-100 text-green-700 border border-green-300 px-4 py-3 rounded mb-4 text-sm">
+               Generate OTP and verify to Access other fields
+            </div>
+          
+          <br />
 
           {error && (
             <div className="bg-red-100 text-red-700 border border-red-300 px-4 py-3 rounded mb-4 text-sm">
