@@ -1,30 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
-/**
- * Uses:
- *  VITE_API_BASE=/api
- *  Vite proxy for local
- */
 const API = import.meta.env.VITE_API_BASE || "";
 
 export default function AdminVideoUploadPage() {
-  /**
-   * step:
-   * - login
-   * - upload
-   * - denied
-   */
   const [step, setStep] = useState("login");
-
-  /**
-   * phase:
-   * - idle
-   * - uploading
-   * - processing
-   * - done
-   * - failed
-   */
   const [phase, setPhase] = useState("idle");
 
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -32,117 +12,73 @@ export default function AdminVideoUploadPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [courses, setCourses] = useState([]);
 
   const pollRef = useRef(null);
 
-  // =========================
-  // CLEANUP POLLING ON UNMOUNT
-  // =========================
   useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
+    return () => pollRef.current && clearInterval(pollRef.current);
   }, []);
 
-  // =========================
   // LOGIN
-  // =========================
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const res = await axios.post(`${API}/auth/login/`, {
-        email,
-        password,
-      });
-
+      const res = await axios.post(`${API}/auth/login/`, { email, password });
       const { token, user } = res.data;
-      localStorage.setItem("token", token);
 
       if (user.role !== "admin") {
         setStep("denied");
         return;
       }
 
-      // fetch courses for admin
+      localStorage.setItem("token", token);
+
       const courseRes = await axios.get(`${API}/admin-courses/`, {
-        headers: {
-          Authorization: `Token ${token}`,
-        },
+        headers: { Authorization: `Token ${token}` },
       });
 
       setCourses(courseRes.data);
       setStep("upload");
-    } catch (err) {
-      alert(err.response?.data?.error || "Login failed");
+    } catch {
+      alert("Login failed");
     } finally {
       setLoading(false);
     }
   };
 
-  // =========================
-  // VIDEO UPLOAD
-  // =========================
+  // UPLOAD
   const handleUpload = async (e) => {
     e.preventDefault();
-
     const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Not authenticated");
-      return;
-    }
 
     const form = e.target;
-    const file = form.video.files[0];
-
-    if (!file) {
-      alert("Select a video");
-      return;
-    }
-
     const formData = new FormData();
     formData.append("course", form.course.value);
     formData.append("title", form.title.value);
     formData.append("description", form.description.value);
-    formData.append("source_video", file);
+    formData.append("source_video", form.video.files[0]);
 
     try {
       setPhase("uploading");
       setUploadProgress(0);
 
-      const res = await axios.post(
-        `${API}/admin-videos/upload/`,
-        formData,
-        {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-          onUploadProgress: (e) => {
-            if (e.total) {
-              setUploadProgress(
-                Math.round((e.loaded * 100) / e.total)
-              );
-            }
-          },
-        }
-      );
+      const res = await axios.post(`${API}/admin-videos/upload/`, formData, {
+        headers: { Authorization: `Token ${token}` },
+        onUploadProgress: (e) =>
+          e.total && setUploadProgress(Math.round((e.loaded * 100) / e.total)),
+      });
 
-      // upload finished → processing
       setPhase("processing");
-      pollStatus(res.data.id || res.data.video_id);
-    } catch (err) {
-      console.error(err);
+      pollStatus(res.data.video_id);
+    } catch {
       setPhase("failed");
-      alert("Upload failed");
     }
   };
 
-  // =========================
-  // POLL VIDEO STATUS
-  // =========================
+  // STATUS POLLING
   const pollStatus = (videoId) => {
     const token = localStorage.getItem("token");
 
@@ -150,11 +86,7 @@ export default function AdminVideoUploadPage() {
       try {
         const res = await axios.get(
           `${API}/admin-videos/${videoId}/status/`,
-          {
-            headers: {
-              Authorization: `Token ${token}`,
-            },
-          }
+          { headers: { Authorization: `Token ${token}` } }
         );
 
         if (res.data.status === "ready") {
@@ -166,119 +98,56 @@ export default function AdminVideoUploadPage() {
           clearInterval(pollRef.current);
           setPhase("failed");
         }
-      } catch (err) {
+      } catch {
         clearInterval(pollRef.current);
         setPhase("failed");
       }
     }, 3000);
   };
 
-  // =========================
-  // UI
-  // =========================
   return (
     <div style={{ maxWidth: 500, margin: "40px auto" }}>
-
-      {/* ===== LOGIN ===== */}
       {step === "login" && (
-        <>
+        <form onSubmit={handleLogin}>
           <h2>Admin Login</h2>
-          <form onSubmit={handleLogin}>
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            /><br /><br />
-
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            /><br /><br />
-
-            <button disabled={loading}>
-              {loading ? "Logging in..." : "Login"}
-            </button>
-          </form>
-        </>
+          <input type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)} required />
+          <br /><br />
+          <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} required />
+          <br /><br />
+          <button disabled={loading}>{loading ? "Logging in..." : "Login"}</button>
+        </form>
       )}
 
-      {/* ===== DENIED ===== */}
-      {step === "denied" && (
-        <h3 style={{ color: "red" }}>
-          ❌ Access denied. Admin only.
-        </h3>
-      )}
+      {step === "denied" && <h3 style={{ color: "red" }}>❌ Admin only</h3>}
 
-      {/* ===== UPLOAD ===== */}
       {step === "upload" && (
-        <>
-          <h2>Upload Video (Admin)</h2>
+        <form onSubmit={handleUpload}>
+          <h2>Upload Video</h2>
+          <input name="title" placeholder="Title" required /><br /><br />
+          <textarea name="description" placeholder="Description" /><br /><br />
 
-          <form onSubmit={handleUpload}>
-            <input name="title" placeholder="Title" required /><br /><br />
+          <select name="course" required>
+            <option value="">Select course</option>
+            {courses.map((c) => (
+              <option key={c.id} value={c.id}>{c.title}</option>
+            ))}
+          </select><br /><br />
 
-            <textarea
-              name="description"
-              placeholder="Description"
-            /><br /><br />
+          <input type="file" name="video" accept="video/mp4" required /><br /><br />
 
-            <select name="course" required>
-              <option value="">Select course</option>
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.title}
-                </option>
-              ))}
-            </select><br /><br />
+          {phase === "uploading" && (
+            <>
+              <p>Uploading {uploadProgress}%</p>
+              <progress value={uploadProgress} max="100" />
+            </>
+          )}
 
-            <input
-              type="file"
-              name="video"
-              accept="video/mp4"
-              required
-            /><br /><br />
+          {phase === "processing" && <p>⏳ Processing video...</p>}
+          {phase === "done" && <p style={{ color: "green" }}>✅ Video ready</p>}
+          {phase === "failed" && <p style={{ color: "red" }}>❌ Failed</p>}
 
-            {/* UPLOADING */}
-            {phase === "uploading" && (
-              <>
-                <p>Uploading: {uploadProgress}%</p>
-                <progress value={uploadProgress} max="100" />
-              </>
-            )}
-
-            {/* PROCESSING */}
-            {phase === "processing" && (
-              <p>⏳ Processing video (FFmpeg → HLS → Cloudflare)</p>
-            )}
-
-            {/* DONE */}
-            {phase === "done" && (
-              <p style={{ color: "green" }}>
-                ✅ Video ready & streaming enabled
-              </p>
-            )}
-
-            {/* FAILED */}
-            {phase === "failed" && (
-              <p style={{ color: "red" }}>
-                ❌ Upload or processing failed
-              </p>
-            )}
-
-            <br />
-            <button
-              type="submit"
-              disabled={phase === "uploading" || phase === "processing"}
-            >
-              Upload
-            </button>
-          </form>
-        </>
+          <button disabled={phase === "uploading" || phase === "processing"}>Upload</button>
+        </form>
       )}
     </div>
   );
