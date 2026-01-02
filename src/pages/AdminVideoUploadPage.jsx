@@ -1,22 +1,29 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import axios from "axios";
+
+/**
+ * Uses:
+ *  VITE_API_BASE=/api
+ *  Vite proxy for local
+ */
+const API = import.meta.env.VITE_API_BASE || "";
 
 export default function AdminVideoUploadPage() {
   /**
    * step:
-   * - login     → ask email/password
-   * - upload    → admin upload page
-   * - denied    → non-admin user
+   * - login
+   * - upload
+   * - denied
    */
   const [step, setStep] = useState("login");
 
   /**
    * phase:
-   * - idle        → nothing
-   * - uploading   → file upload in progress
-   * - processing  → ffmpeg + R2 upload
-   * - done        → success
-   * - failed      → error
+   * - idle
+   * - uploading
+   * - processing
+   * - done
+   * - failed
    */
   const [phase, setPhase] = useState("idle");
 
@@ -26,7 +33,18 @@ export default function AdminVideoUploadPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [courses, setCourses] = useState([]);
+
   const pollRef = useRef(null);
+
+  // =========================
+  // CLEANUP POLLING ON UNMOUNT
+  // =========================
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
 
   // =========================
   // LOGIN
@@ -36,20 +54,28 @@ export default function AdminVideoUploadPage() {
     setLoading(true);
 
     try {
-      const res = await axios.post("/api/auth/login/", {
+      const res = await axios.post(`${API}/auth/login/`, {
         email,
         password,
       });
 
       const { token, user } = res.data;
-
       localStorage.setItem("token", token);
 
-      if (user.role === "admin") {
-        setStep("upload");
-      } else {
+      if (user.role !== "admin") {
         setStep("denied");
+        return;
       }
+
+      // fetch courses for admin
+      const courseRes = await axios.get(`${API}/admin-courses/`, {
+        headers: {
+          Authorization: `Token ${token}`,
+        },
+      });
+
+      setCourses(courseRes.data);
+      setStep("upload");
     } catch (err) {
       alert(err.response?.data?.error || "Login failed");
     } finally {
@@ -70,19 +96,25 @@ export default function AdminVideoUploadPage() {
     }
 
     const form = e.target;
-    const formData = new FormData();
+    const file = form.video.files[0];
 
+    if (!file) {
+      alert("Select a video");
+      return;
+    }
+
+    const formData = new FormData();
     formData.append("course", form.course.value);
     formData.append("title", form.title.value);
     formData.append("description", form.description.value);
-    formData.append("source_video", form.video.files[0]);
+    formData.append("source_video", file);
 
     try {
       setPhase("uploading");
       setUploadProgress(0);
 
       const res = await axios.post(
-        "/api/admin-videos/upload/",
+        `${API}/admin-videos/upload/`,
         formData,
         {
           headers: {
@@ -98,18 +130,18 @@ export default function AdminVideoUploadPage() {
         }
       );
 
-      // Upload finished → backend processing
+      // upload finished → processing
       setPhase("processing");
-      pollStatus(res.data.video_id);
-
+      pollStatus(res.data.id || res.data.video_id);
     } catch (err) {
+      console.error(err);
       setPhase("failed");
       alert("Upload failed");
     }
   };
 
   // =========================
-  // POLL STATUS
+  // POLL VIDEO STATUS
   // =========================
   const pollStatus = (videoId) => {
     const token = localStorage.getItem("token");
@@ -117,7 +149,7 @@ export default function AdminVideoUploadPage() {
     pollRef.current = setInterval(async () => {
       try {
         const res = await axios.get(
-          `/api/admin-videos/${videoId}/status/`,
+          `${API}/admin-videos/${videoId}/status/`,
           {
             headers: {
               Authorization: `Token ${token}`,
@@ -128,15 +160,13 @@ export default function AdminVideoUploadPage() {
         if (res.data.status === "ready") {
           clearInterval(pollRef.current);
           setPhase("done");
-          alert("✅ Video processed and ready for streaming");
         }
 
         if (res.data.status === "failed") {
           clearInterval(pollRef.current);
           setPhase("failed");
-          alert("❌ Video processing failed");
         }
-      } catch {
+      } catch (err) {
         clearInterval(pollRef.current);
         setPhase("failed");
       }
@@ -149,7 +179,7 @@ export default function AdminVideoUploadPage() {
   return (
     <div style={{ maxWidth: 500, margin: "40px auto" }}>
 
-      {/* ================= LOGIN ================= */}
+      {/* ===== LOGIN ===== */}
       {step === "login" && (
         <>
           <h2>Admin Login</h2>
@@ -177,14 +207,14 @@ export default function AdminVideoUploadPage() {
         </>
       )}
 
-      {/* ================= DENIED ================= */}
+      {/* ===== DENIED ===== */}
       {step === "denied" && (
         <h3 style={{ color: "red" }}>
-          Access denied. Admin only.
+          ❌ Access denied. Admin only.
         </h3>
       )}
 
-      {/* ================= UPLOAD ================= */}
+      {/* ===== UPLOAD ===== */}
       {step === "upload" && (
         <>
           <h2>Upload Video (Admin)</h2>
@@ -199,7 +229,11 @@ export default function AdminVideoUploadPage() {
 
             <select name="course" required>
               <option value="">Select course</option>
-              <option value="1">Course 1</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
             </select><br /><br />
 
             <input
@@ -209,7 +243,7 @@ export default function AdminVideoUploadPage() {
               required
             /><br /><br />
 
-            {/* ===== UPLOAD PROGRESS ===== */}
+            {/* UPLOADING */}
             {phase === "uploading" && (
               <>
                 <p>Uploading: {uploadProgress}%</p>
@@ -217,19 +251,19 @@ export default function AdminVideoUploadPage() {
               </>
             )}
 
-            {/* ===== PROCESSING ===== */}
+            {/* PROCESSING */}
             {phase === "processing" && (
-              <p>⏳ Processing video (HLS + Cloudflare)...</p>
+              <p>⏳ Processing video (FFmpeg → HLS → Cloudflare)</p>
             )}
 
-            {/* ===== DONE ===== */}
+            {/* DONE */}
             {phase === "done" && (
               <p style={{ color: "green" }}>
-                ✅ Video ready and streaming enabled
+                ✅ Video ready & streaming enabled
               </p>
             )}
 
-            {/* ===== FAILED ===== */}
+            {/* FAILED */}
             {phase === "failed" && (
               <p style={{ color: "red" }}>
                 ❌ Upload or processing failed
