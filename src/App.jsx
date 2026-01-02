@@ -22,6 +22,7 @@ import StudentProfile from "./pages/StudentProfile";
 import Bills from "./pages/Bills";
 import Support from "./pages/Support";
 import Contact from "./pages/Contact";
+import VideoUpload from "./pages/AdminVideoUploadPage";
 
 // ===============================
 // Private Route Wrapper
@@ -139,6 +140,8 @@ function App() {
             <Route path="/bills" element={<Bills />} />
             <Route path="/support" element={<Support />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/videoupload" element={<VideoUpload />} />
+
 
 
 

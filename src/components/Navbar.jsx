@@ -63,6 +63,10 @@ function Navbar() {
           <span>
             <Link to="/contact" className="nav-link">Contact Us</Link>
           </span>
+
+          <span>
+            <Link to="/videoupload">upload</Link>
+          </span>
           
 
          
