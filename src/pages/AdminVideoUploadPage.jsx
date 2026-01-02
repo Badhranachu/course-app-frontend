@@ -20,13 +20,19 @@ export default function AdminVideoUploadPage() {
     return () => pollRef.current && clearInterval(pollRef.current);
   }, []);
 
+  // -------------------------
   // LOGIN
+  // -------------------------
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const res = await axios.post(`${API}/auth/login/`, { email, password });
+      const res = await axios.post(`${API}/auth/login/`, {
+        email,
+        password,
+      });
+
       const { token, user } = res.data;
 
       if (user.role !== "admin") {
@@ -49,36 +55,73 @@ export default function AdminVideoUploadPage() {
     }
   };
 
-  // UPLOAD
+  // -------------------------
+  // UPLOAD (DIRECT → R2)
+  // -------------------------
   const handleUpload = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
 
     const form = e.target;
-    const formData = new FormData();
-    formData.append("course", form.course.value);
-    formData.append("title", form.title.value);
-    formData.append("description", form.description.value);
-    formData.append("source_video", form.video.files[0]);
+    const file = form.video.files[0];
+
+    if (!file) return alert("Select a video");
 
     try {
       setPhase("uploading");
       setUploadProgress(0);
 
-      const res = await axios.post(`${API}/admin-videos/upload/`, formData, {
-        headers: { Authorization: `Token ${token}` },
-        onUploadProgress: (e) =>
-          e.total && setUploadProgress(Math.round((e.loaded * 100) / e.total)),
+      // 1️⃣ Get presigned URL
+      const presignRes = await axios.post(
+        `${API}/admin-videos/presign/`,
+        {
+          filename: file.name,
+          content_type: file.type,
+        },
+        {
+          headers: { Authorization: `Token ${token}` },
+        }
+      );
+
+      const { upload_url, key } = presignRes.data;
+
+      // 2️⃣ Upload directly to R2
+      await axios.put(upload_url, file, {
+        headers: { "Content-Type": file.type },
+        onUploadProgress: (e) => {
+          if (e.total) {
+            setUploadProgress(
+              Math.round((e.loaded * 100) / e.total)
+            );
+          }
+        },
       });
 
+      // 3️⃣ Create video record + start Celery
+      const createRes = await axios.post(
+        `${API}/admin-videos/create/`,
+        {
+          title: form.title.value,
+          description: form.description.value,
+          course: form.course.value,
+          r2_key: key,
+        },
+        {
+          headers: { Authorization: `Token ${token}` },
+        }
+      );
+
       setPhase("processing");
-      pollStatus(res.data.video_id);
-    } catch {
+      pollStatus(createRes.data.video_id);
+    } catch (err) {
+      console.error(err);
       setPhase("failed");
     }
   };
 
+  // -------------------------
   // STATUS POLLING
+  // -------------------------
   const pollStatus = (videoId) => {
     const token = localStorage.getItem("token");
 
@@ -86,7 +129,9 @@ export default function AdminVideoUploadPage() {
       try {
         const res = await axios.get(
           `${API}/admin-videos/${videoId}/status/`,
-          { headers: { Authorization: `Token ${token}` } }
+          {
+            headers: { Authorization: `Token ${token}` },
+          }
         );
 
         if (res.data.status === "ready") {
@@ -105,35 +150,68 @@ export default function AdminVideoUploadPage() {
     }, 3000);
   };
 
+  // -------------------------
+  // UI
+  // -------------------------
   return (
     <div style={{ maxWidth: 500, margin: "40px auto" }}>
       {step === "login" && (
         <form onSubmit={handleLogin}>
           <h2>Admin Login</h2>
-          <input type="email" placeholder="Email" onChange={(e) => setEmail(e.target.value)} required />
+
+          <input
+            type="email"
+            placeholder="Email"
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
           <br /><br />
-          <input type="password" placeholder="Password" onChange={(e) => setPassword(e.target.value)} required />
+
+          <input
+            type="password"
+            placeholder="Password"
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
           <br /><br />
-          <button disabled={loading}>{loading ? "Logging in..." : "Login"}</button>
+
+          <button disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
+          </button>
         </form>
       )}
 
-      {step === "denied" && <h3 style={{ color: "red" }}>❌ Admin only</h3>}
+      {step === "denied" && (
+        <h3 style={{ color: "red" }}>❌ Admin only</h3>
+      )}
 
       {step === "upload" && (
         <form onSubmit={handleUpload}>
           <h2>Upload Video</h2>
-          <input name="title" placeholder="Title" required /><br /><br />
-          <textarea name="description" placeholder="Description" /><br /><br />
+
+          <input name="title" placeholder="Title" required />
+          <br /><br />
+
+          <textarea name="description" placeholder="Description" />
+          <br /><br />
 
           <select name="course" required>
             <option value="">Select course</option>
             {courses.map((c) => (
-              <option key={c.id} value={c.id}>{c.title}</option>
+              <option key={c.id} value={c.id}>
+                {c.title}
+              </option>
             ))}
-          </select><br /><br />
+          </select>
+          <br /><br />
 
-          <input type="file" name="video" accept="video/mp4" required /><br /><br />
+          <input
+            type="file"
+            name="video"
+            accept="video/mp4"
+            required
+          />
+          <br /><br />
 
           {phase === "uploading" && (
             <>
@@ -142,11 +220,25 @@ export default function AdminVideoUploadPage() {
             </>
           )}
 
-          {phase === "processing" && <p>⏳ Processing video...</p>}
-          {phase === "done" && <p style={{ color: "green" }}>✅ Video ready</p>}
-          {phase === "failed" && <p style={{ color: "red" }}>❌ Failed</p>}
+          {phase === "processing" && (
+            <p>⏳ Converting to HLS…</p>
+          )}
 
-          <button disabled={phase === "uploading" || phase === "processing"}>Upload</button>
+          {phase === "done" && (
+            <p style={{ color: "green" }}>
+              ✅ Video uploaded & processed
+            </p>
+          )}
+
+          {phase === "failed" && (
+            <p style={{ color: "red" }}>❌ Failed</p>
+          )}
+
+          <button
+            disabled={phase === "uploading" || phase === "processing"}
+          >
+            Upload
+          </button>
         </form>
       )}
     </div>
